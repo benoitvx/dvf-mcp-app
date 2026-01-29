@@ -23,8 +23,14 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 - `ontoolresult` détecte automatiquement le mode (single vs compare)
 - `ontoolinput` gère les args `arrondissement_1/2` pour le loading state
 
+### Fixed
+- Labels tronqués dans le bar chart SVG quand la barre est proche du max (réserve 110px pour les valeurs)
+
 ### Tested
 - Build OK, pas d'erreur TypeScript
+- Validé sur claude.ai (Claude Desktop) : compare-dvf-stats appelle le bon tool
+- Carte 2 couleurs (bleu 1er, orange 20e) OK
+- Bar chart lisible avec les 3 métriques complètes
 - Toggle Apparts/Maisons met à jour le bar chart en mode comparaison
 - Retour en mode single après compare : widget revient à 380px
 
