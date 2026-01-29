@@ -1,0 +1,302 @@
+{
+  "1": {
+    "arrondissement": 1,
+    "nom": "Paris 1er",
+    "appartements": {
+      "prix_moyen": 12770,
+      "prix_median": 12400,
+      "nb_ventes": 412
+    },
+    "maisons": {
+      "prix_moyen": 15200,
+      "prix_median": 14800,
+      "nb_ventes": 3
+    },
+    "coords": { "lat": 48.8602, "lon": 2.3477 }
+  },
+  "2": {
+    "arrondissement": 2,
+    "nom": "Paris 2e",
+    "appartements": {
+      "prix_moyen": 11350,
+      "prix_median": 11000,
+      "nb_ventes": 487
+    },
+    "maisons": {
+      "prix_moyen": 13100,
+      "prix_median": 12700,
+      "nb_ventes": 2
+    },
+    "coords": { "lat": 48.8687, "lon": 2.3441 }
+  },
+  "3": {
+    "arrondissement": 3,
+    "nom": "Paris 3e",
+    "appartements": {
+      "prix_moyen": 12150,
+      "prix_median": 11800,
+      "nb_ventes": 521
+    },
+    "maisons": {
+      "prix_moyen": 13800,
+      "prix_median": 13200,
+      "nb_ventes": 5
+    },
+    "coords": { "lat": 48.8637, "lon": 2.3615 }
+  },
+  "4": {
+    "arrondissement": 4,
+    "nom": "Paris 4e",
+    "appartements": {
+      "prix_moyen": 13200,
+      "prix_median": 12800,
+      "nb_ventes": 498
+    },
+    "maisons": {
+      "prix_moyen": 14500,
+      "prix_median": 14000,
+      "nb_ventes": 4
+    },
+    "coords": { "lat": 48.8543, "lon": 2.3572 }
+  },
+  "5": {
+    "arrondissement": 5,
+    "nom": "Paris 5e",
+    "appartements": {
+      "prix_moyen": 12350,
+      "prix_median": 12000,
+      "nb_ventes": 632
+    },
+    "maisons": {
+      "prix_moyen": 13900,
+      "prix_median": 13400,
+      "nb_ventes": 7
+    },
+    "coords": { "lat": 48.8449, "lon": 2.3497 }
+  },
+  "6": {
+    "arrondissement": 6,
+    "nom": "Paris 6e",
+    "appartements": {
+      "prix_moyen": 14540,
+      "prix_median": 14100,
+      "nb_ventes": 578
+    },
+    "maisons": {
+      "prix_moyen": 16200,
+      "prix_median": 15600,
+      "nb_ventes": 6
+    },
+    "coords": { "lat": 48.8499, "lon": 2.3331 }
+  },
+  "7": {
+    "arrondissement": 7,
+    "nom": "Paris 7e",
+    "appartements": {
+      "prix_moyen": 13840,
+      "prix_median": 13400,
+      "nb_ventes": 645
+    },
+    "maisons": {
+      "prix_moyen": 15800,
+      "prix_median": 15200,
+      "nb_ventes": 8
+    },
+    "coords": { "lat": 48.8566, "lon": 2.3126 }
+  },
+  "8": {
+    "arrondissement": 8,
+    "nom": "Paris 8e",
+    "appartements": {
+      "prix_moyen": 11870,
+      "prix_median": 11500,
+      "nb_ventes": 534
+    },
+    "maisons": {
+      "prix_moyen": 14200,
+      "prix_median": 13600,
+      "nb_ventes": 4
+    },
+    "coords": { "lat": 48.8763, "lon": 2.3106 }
+  },
+  "9": {
+    "arrondissement": 9,
+    "nom": "Paris 9e",
+    "appartements": {
+      "prix_moyen": 10680,
+      "prix_median": 10300,
+      "nb_ventes": 723
+    },
+    "maisons": {
+      "prix_moyen": 12400,
+      "prix_median": 11900,
+      "nb_ventes": 5
+    },
+    "coords": { "lat": 48.8772, "lon": 2.3378 }
+  },
+  "10": {
+    "arrondissement": 10,
+    "nom": "Paris 10e",
+    "appartements": {
+      "prix_moyen": 9750,
+      "prix_median": 9400,
+      "nb_ventes": 892
+    },
+    "maisons": {
+      "prix_moyen": 11200,
+      "prix_median": 10800,
+      "nb_ventes": 8
+    },
+    "coords": { "lat": 48.8762, "lon": 2.3598 }
+  },
+  "11": {
+    "arrondissement": 11,
+    "nom": "Paris 11e",
+    "appartements": {
+      "prix_moyen": 10200,
+      "prix_median": 9900,
+      "nb_ventes": 1245
+    },
+    "maisons": {
+      "prix_moyen": 11800,
+      "prix_median": 11300,
+      "nb_ventes": 12
+    },
+    "coords": { "lat": 48.8592, "lon": 2.3806 }
+  },
+  "12": {
+    "arrondissement": 12,
+    "nom": "Paris 12e",
+    "appartements": {
+      "prix_moyen": 9580,
+      "prix_median": 9200,
+      "nb_ventes": 1134
+    },
+    "maisons": {
+      "prix_moyen": 10900,
+      "prix_median": 10400,
+      "nb_ventes": 15
+    },
+    "coords": { "lat": 48.8399, "lon": 2.3876 }
+  },
+  "13": {
+    "arrondissement": 13,
+    "nom": "Paris 13e",
+    "appartements": {
+      "prix_moyen": 8700,
+      "prix_median": 8400,
+      "nb_ventes": 1356
+    },
+    "maisons": {
+      "prix_moyen": 9800,
+      "prix_median": 9400,
+      "nb_ventes": 18
+    },
+    "coords": { "lat": 48.8322, "lon": 2.3561 }
+  },
+  "14": {
+    "arrondissement": 14,
+    "nom": "Paris 14e",
+    "appartements": {
+      "prix_moyen": 9650,
+      "prix_median": 9300,
+      "nb_ventes": 1087
+    },
+    "maisons": {
+      "prix_moyen": 11100,
+      "prix_median": 10600,
+      "nb_ventes": 14
+    },
+    "coords": { "lat": 48.8286, "lon": 2.3269 }
+  },
+  "15": {
+    "arrondissement": 15,
+    "nom": "Paris 15e",
+    "appartements": {
+      "prix_moyen": 9820,
+      "prix_median": 9500,
+      "nb_ventes": 1678
+    },
+    "maisons": {
+      "prix_moyen": 11400,
+      "prix_median": 10900,
+      "nb_ventes": 21
+    },
+    "coords": { "lat": 48.8421, "lon": 2.2988 }
+  },
+  "16": {
+    "arrondissement": 16,
+    "nom": "Paris 16e",
+    "appartements": {
+      "prix_moyen": 10950,
+      "prix_median": 10600,
+      "nb_ventes": 1423
+    },
+    "maisons": {
+      "prix_moyen": 12800,
+      "prix_median": 12200,
+      "nb_ventes": 25
+    },
+    "coords": { "lat": 48.8637, "lon": 2.2769 }
+  },
+  "17": {
+    "arrondissement": 17,
+    "nom": "Paris 17e",
+    "appartements": {
+      "prix_moyen": 10250,
+      "prix_median": 9900,
+      "nb_ventes": 1198
+    },
+    "maisons": {
+      "prix_moyen": 11900,
+      "prix_median": 11400,
+      "nb_ventes": 16
+    },
+    "coords": { "lat": 48.8875, "lon": 2.3133 }
+  },
+  "18": {
+    "arrondissement": 18,
+    "nom": "Paris 18e",
+    "appartements": {
+      "prix_moyen": 9100,
+      "prix_median": 8800,
+      "nb_ventes": 1567
+    },
+    "maisons": {
+      "prix_moyen": 10500,
+      "prix_median": 10100,
+      "nb_ventes": 19
+    },
+    "coords": { "lat": 48.8925, "lon": 2.3444 }
+  },
+  "19": {
+    "arrondissement": 19,
+    "nom": "Paris 19e",
+    "appartements": {
+      "prix_moyen": 7940,
+      "prix_median": 7600,
+      "nb_ventes": 1289
+    },
+    "maisons": {
+      "prix_moyen": 8900,
+      "prix_median": 8500,
+      "nb_ventes": 22
+    },
+    "coords": { "lat": 48.8867, "lon": 2.3802 }
+  },
+  "20": {
+    "arrondissement": 20,
+    "nom": "Paris 20e",
+    "appartements": {
+      "prix_moyen": 8340,
+      "prix_median": 8000,
+      "nb_ventes": 1378
+    },
+    "maisons": {
+      "prix_moyen": 9400,
+      "prix_median": 9000,
+      "nb_ventes": 20
+    },
+    "coords": { "lat": 48.8638, "lon": 2.3985 }
+  }
+}
