@@ -165,9 +165,10 @@ function renderBarChart(
   const paddingTop = legendH + 8;
   const totalH =
     paddingTop + metrics.length * (2 * barH + labelH + groupGap) - groupGap + 8;
-  const chartW = 460;
+  const valueLabelW = 110;
+  const chartW = 520;
   const barAreaX = 120;
-  const barAreaW = chartW - barAreaX - 10;
+  const barAreaW = chartW - barAreaX - valueLabelW;
 
   const maxVal = Math.max(...metrics.flatMap((m) => [m.value1, m.value2]), 1);
 
