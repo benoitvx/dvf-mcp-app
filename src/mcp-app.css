@@ -15,6 +15,11 @@ html, body {
 .main {
   width: 100%;
   max-width: 380px;
+  transition: max-width 0.3s ease;
+}
+
+.main.compare-mode {
+  max-width: 520px;
 }
 
 .widget {
@@ -130,6 +135,15 @@ html, body {
   background: var(--color-text-primary, #1a1a1a);
   color: var(--color-background-primary, #fff);
   border-color: var(--color-text-primary, #1a1a1a);
+}
+
+.compare-section {
+  padding: 12px 20px 0;
+}
+
+.chart-container svg {
+  display: block;
+  max-width: 100%;
 }
 
 .source {

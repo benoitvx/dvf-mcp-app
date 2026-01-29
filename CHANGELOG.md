@@ -6,6 +6,30 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ---
 
+## [0.3.0] - 2026-01-29
+
+### Added
+- Tool `compare-dvf-stats` : compare les stats DVF entre 2 arrondissements
+- Bar chart SVG pur (3 métriques groupées : prix moyen, médian, nb ventes)
+- Mode comparaison dans l'UI : détection via `structuredContent.mode === "compare"`
+- Carte : 2 arrondissements en surbrillance (bleu + orange) avec fitBounds combiné
+- Widget passe de 380px → 520px en mode comparaison (transition CSS)
+- Légende colorée dans le chart SVG
+- Protection XSS dans le SVG via `escapeXml()`
+
+### Changed
+- `highlightArrondissement()` → `highlightArrondissements(num1, num2?)` (rétrocompatible)
+- `render()` dispatch vers `renderSingle()` / `renderCompare()` selon le mode
+- `ontoolresult` détecte automatiquement le mode (single vs compare)
+- `ontoolinput` gère les args `arrondissement_1/2` pour le loading state
+
+### Tested
+- Build OK, pas d'erreur TypeScript
+- Toggle Apparts/Maisons met à jour le bar chart en mode comparaison
+- Retour en mode single après compare : widget revient à 380px
+
+---
+
 ## [0.2.0] - 2026-01-29
 
 ### Added

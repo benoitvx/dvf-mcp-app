@@ -26,12 +26,18 @@ type DvfEntry = {
   coords: { lat: number; lon: number };
 };
 
+type DvfCompareResult = {
+  mode: "compare";
+  arrondissement_1: DvfEntry;
+  arrondissement_2: DvfEntry;
+};
+
 const data = dvfData as Record<string, DvfEntry>;
 
 export function createServer(): McpServer {
   const server = new McpServer({
     name: "DVF Paris",
-    version: "0.2.0",
+    version: "0.3.0",
   });
 
   const resourceUri = "ui://dvf/mcp-app.html";
@@ -75,6 +81,67 @@ export function createServer(): McpServer {
           },
         ],
         structuredContent: stats,
+      };
+    },
+  );
+
+  registerAppTool(
+    server,
+    "compare-dvf-stats",
+    {
+      title: "Comparaison prix immobilier Paris",
+      description:
+        "Compare les statistiques DVF (prix au m²) entre deux arrondissements parisiens",
+      inputSchema: {
+        arrondissement_1: z
+          .number()
+          .min(1)
+          .max(20)
+          .describe("Premier arrondissement (1-20)"),
+        arrondissement_2: z
+          .number()
+          .min(1)
+          .max(20)
+          .describe("Second arrondissement (1-20)"),
+      },
+      _meta: { ui: { resourceUri } },
+    },
+    async ({ arrondissement_1, arrondissement_2 }): Promise<CallToolResult> => {
+      const stats1 = data[String(arrondissement_1)];
+      const stats2 = data[String(arrondissement_2)];
+
+      if (!stats1 || !stats2) {
+        const missing = !stats1 ? arrondissement_1 : arrondissement_2;
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Arrondissement ${missing} non trouvé.`,
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      const diff =
+        stats1.appartements.prix_moyen - stats2.appartements.prix_moyen;
+      const pctDiff = ((diff / stats2.appartements.prix_moyen) * 100).toFixed(
+        1,
+      );
+      const sign = diff > 0 ? "+" : "";
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Comparaison ${stats1.nom} vs ${stats2.nom} — Appartements : ${stats1.appartements.prix_moyen.toLocaleString("fr-FR")} vs ${stats2.appartements.prix_moyen.toLocaleString("fr-FR")} €/m² (${sign}${pctDiff} %). Maisons : ${stats1.maisons.prix_moyen.toLocaleString("fr-FR")} vs ${stats2.maisons.prix_moyen.toLocaleString("fr-FR")} €/m².`,
+          },
+        ],
+        structuredContent: {
+          mode: "compare",
+          arrondissement_1: stats1,
+          arrondissement_2: stats2,
+        } satisfies DvfCompareResult,
       };
     },
   );

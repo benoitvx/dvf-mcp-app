@@ -35,10 +35,10 @@
 - [x] Afficher les limites de l'arrondissement
 - [x] Testé sur claude.ai (Streamable HTTP + ngrok)
 
-## v0.3 — Comparaison (post-POC)
+## v0.3 — Comparaison ✅
 
-- [ ] Comparer 2 arrondissements
-- [ ] Graphique bar chart des prix
+- [x] Comparer 2 arrondissements
+- [x] Graphique bar chart des prix
 
 ---
 
