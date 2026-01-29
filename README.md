@@ -1,0 +1,113 @@
+# DVF Paris — MCP App
+
+An interactive MCP App that displays Paris real estate prices per arrondissement, directly inside Claude.
+
+Built with the [MCP Apps SDK](https://github.com/modelcontextprotocol/ext-apps) (`@modelcontextprotocol/ext-apps`).
+
+## What it does
+
+Ask Claude about Paris real estate prices and get an interactive widget with:
+
+- **Interactive map** (Leaflet + OpenStreetMap) highlighting the arrondissement
+- **Price stats**: average price/m², median price/m², number of sales
+- **Apartments / Houses toggle**
+- **Comparison mode**: compare two arrondissements side-by-side with a bar chart
+
+Data source: [DVF (Demandes de Valeurs Foncieres)](https://www.data.gouv.fr/fr/datasets/demandes-de-valeurs-foncieres-geolocalisees/) from data.gouv.fr.
+
+## Architecture
+
+```
+Claude                    MCP Server               UI (iframe)
+  │                          │                         │
+  │── "prix Paris 11" ──────>│                         │
+  │                          │── get-dvf-stats ───────>│
+  │                          │   structuredContent     │── Map + Stats
+  │                          │                         │
+  │── "compare 6e vs 11e" ──>│                         │
+  │                          │── compare-dvf-stats ───>│
+  │                          │   mode: "compare"       │── Map + Bar chart
+```
+
+1. Claude calls `get-dvf-stats` or `compare-dvf-stats`
+2. The tool returns data + a reference to `ui://dvf/mcp-app.html`
+3. Claude fetches the resource and displays it in a sandboxed iframe
+4. The UI receives data via `app.ontoolresult`
+
+## MCP Tools
+
+| Tool | Input | Output |
+|------|-------|--------|
+| `get-dvf-stats` | `arrondissement` (1-20) | Price stats for one arrondissement |
+| `compare-dvf-stats` | `arrondissement_1`, `arrondissement_2` (1-20) | Side-by-side comparison with bar chart |
+
+## Stack
+
+| Component | Technology |
+|-----------|------------|
+| MCP Apps SDK | `@modelcontextprotocol/ext-apps` |
+| MCP Server | `@modelcontextprotocol/sdk` |
+| Build | Vite + TypeScript |
+| UI | Vanilla JS |
+| Map | Leaflet + OpenStreetMap (no API key needed) |
+| Charts | Pure SVG (no dependencies) |
+| Transport | stdio (Claude Desktop) or Streamable HTTP |
+
+## Setup
+
+```bash
+npm install
+npm run build
+```
+
+## Claude Desktop configuration
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "dvf-paris": {
+      "command": "bash",
+      "args": ["-c", "cd /path/to/dvf-mcp-app && npx tsx main.ts --stdio"]
+    }
+  }
+}
+```
+
+Then restart Claude Desktop.
+
+## Development
+
+```bash
+# Watch mode (UI hot reload + server)
+npm run dev
+
+# Build only
+npm run build
+
+# Run server (Streamable HTTP on port 3001)
+npm run serve
+```
+
+## Project structure
+
+```
+dvf-mcp-app/
+├── server.ts              # MCP Server + Tools + Resource
+├── main.ts                # Entry point (stdio + HTTP)
+├── mcp-app.html           # UI shell (HTML)
+├── src/
+│   ├── mcp-app.ts         # UI logic (map, chart, host communication)
+│   ├── mcp-app.css        # Widget styles
+│   └── data/
+│       ├── dvf-paris.json          # Pre-computed stats per arrondissement
+│       └── arrondissements.geojson.json  # GeoJSON boundaries
+├── package.json
+├── tsconfig.json
+└── vite.config.ts
+```
+
+## License
+
+MIT
