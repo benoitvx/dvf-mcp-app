@@ -28,11 +28,12 @@
 
 ---
 
-## v0.2 — Carte interactive (post-POC)
+## v0.2 — Carte interactive ✅
 
 - [x] Intégrer Leaflet + OpenStreetMap
 - [x] Centrer sur l'arrondissement demandé
 - [x] Afficher les limites de l'arrondissement
+- [x] Testé sur claude.ai (Streamable HTTP + ngrok)
 
 ## v0.3 — Comparaison (post-POC)
 

@@ -16,6 +16,11 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 - Dark mode : filtre CSS invert/hue-rotate sur les tuiles
 - ResizeObserver pour maintenir la carte à jour
 
+### Tested
+- Validé sur claude.ai via Streamable HTTP + tunnel ngrok
+- Carte affichée, arrondissement en surbrillance, dark mode OK
+- Toggle Appartements/Maisons stable avec la carte
+
 ---
 
 ## [0.1.0] - 2025-01-29
