@@ -6,7 +6,10 @@ import {
   type McpUiHostContext,
 } from "@modelcontextprotocol/ext-apps";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import "./mcp-app.css";
+import arrondissementsGeoJson from "./data/arrondissements.geojson.json";
 
 interface DvfStats {
   arrondissement: number;
@@ -27,6 +30,66 @@ const btnMaison = document.getElementById("btn-maison")!;
 
 let currentStats: DvfStats | null = null;
 let currentType: "appartements" | "maisons" = "appartements";
+
+let map: L.Map | null = null;
+let highlightLayer: L.GeoJSON | null = null;
+
+function initMap() {
+  const mapEl = document.getElementById("map");
+  if (!mapEl || map) return;
+
+  map = L.map(mapEl, {
+    scrollWheelZoom: false,
+    zoomControl: false,
+    attributionControl: true,
+  });
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "&copy; OSM",
+    maxZoom: 18,
+  }).addTo(map);
+
+  L.geoJSON(arrondissementsGeoJson as GeoJSON.FeatureCollection, {
+    style: {
+      color: "#999",
+      weight: 1,
+      fillColor: "#ddd",
+      fillOpacity: 0.15,
+    },
+  }).addTo(map);
+
+  map.fitBounds(
+    L.geoJSON(arrondissementsGeoJson as GeoJSON.FeatureCollection).getBounds(),
+    { padding: [10, 10] },
+  );
+
+  new ResizeObserver(() => map?.invalidateSize()).observe(mapEl);
+}
+
+function highlightArrondissement(num: number) {
+  if (!map) return;
+
+  if (highlightLayer) {
+    map.removeLayer(highlightLayer);
+    highlightLayer = null;
+  }
+
+  const feature = (arrondissementsGeoJson as GeoJSON.FeatureCollection).features.find(
+    (f) => f.properties?.c_ar === num,
+  );
+  if (!feature) return;
+
+  highlightLayer = L.geoJSON(feature as GeoJSON.Feature, {
+    style: {
+      color: "#2563eb",
+      weight: 2.5,
+      fillColor: "#3b82f6",
+      fillOpacity: 0.25,
+    },
+  }).addTo(map);
+
+  map.fitBounds(highlightLayer.getBounds(), { padding: [30, 30], maxZoom: 14 });
+}
 
 function fmt(n: number): string {
   return n.toLocaleString("fr-FR");
@@ -64,7 +127,7 @@ function handleHostContext(ctx: McpUiHostContext) {
   }
 }
 
-const app = new App({ name: "DVF Paris", version: "0.1.0" });
+const app = new App({ name: "DVF Paris", version: "0.2.0" });
 
 app.onteardown = async () => ({ });
 
@@ -83,6 +146,8 @@ app.ontoolresult = (result: CallToolResult) => {
   btnAppart.classList.add("active");
   btnMaison.classList.remove("active");
   render();
+  initMap();
+  highlightArrondissement(stats.arrondissement);
 };
 
 app.onerror = console.error;

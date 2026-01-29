@@ -31,7 +31,7 @@ const data = dvfData as Record<string, DvfEntry>;
 export function createServer(): McpServer {
   const server = new McpServer({
     name: "DVF Paris",
-    version: "0.1.0",
+    version: "0.2.0",
   });
 
   const resourceUri = "ui://dvf/mcp-app.html";
@@ -90,7 +90,20 @@ export function createServer(): McpServer {
         "utf-8",
       );
       return {
-        contents: [{ uri: resourceUri, mimeType: RESOURCE_MIME_TYPE, text: html }],
+        contents: [
+          {
+            uri: resourceUri,
+            mimeType: RESOURCE_MIME_TYPE,
+            text: html,
+            _meta: {
+              ui: {
+                csp: {
+                  resourceDomains: ["https://*.tile.openstreetmap.org"],
+                },
+              },
+            },
+          },
+        ],
       };
     },
   );

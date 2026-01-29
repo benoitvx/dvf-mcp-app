@@ -7,32 +7,32 @@
 **Objectif** : Prompt "prix immobilier Paris 11" → widget avec stats
 
 ### Setup (via skill `create-mcp-app`)
-- [ ] Demander à Claude Code de scaffolder le projet avec le skill
-- [ ] Claude Code génère `dvf-paris.json` avec stats des 20 arrondissements (depuis data.gouv.fr)
-- [ ] Init Git + premier commit
+- [x] Demander à Claude Code de scaffolder le projet avec le skill
+- [x] Claude Code génère `dvf-paris.json` avec stats des 20 arrondissements (depuis data.gouv.fr)
+- [x] Init Git + premier commit
 
 ### MCP Server
-- [ ] Tool `get-dvf-stats` avec input `arrondissement` (1-20)
-- [ ] Resource `ui://dvf/mcp-app.html`
-- [ ] Retourner `structuredContent` avec les stats
+- [x] Tool `get-dvf-stats` avec input `arrondissement` (1-20)
+- [x] Resource `ui://dvf/mcp-app.html`
+- [x] Retourner `structuredContent` avec les stats
 
 ### UI Widget
-- [ ] Shell HTML + mcp-app.ts
-- [ ] Afficher : arrondissement, prix moyen, prix médian, nb ventes
-- [ ] Style minimal (Tailwind ou CSS inline)
+- [x] Shell HTML + mcp-app.ts
+- [x] Afficher : arrondissement, prix moyen, prix médian, nb ventes
+- [x] Style minimal — CSS variables du host + toggle Apparts/Maisons
 
 ### Test
-- [ ] Config Claude Desktop (stdio)
-- [ ] Test prompt "prix Paris 11"
-- [ ] Vérifier que le widget s'affiche
+- [x] Config Claude Desktop (stdio)
+- [x] Test prompt "prix Paris 11"
+- [x] Vérifier que le widget s'affiche
 
 ---
 
 ## v0.2 — Carte interactive (post-POC)
 
-- [ ] Intégrer Leaflet + OpenStreetMap
-- [ ] Centrer sur l'arrondissement demandé
-- [ ] Afficher les limites de l'arrondissement
+- [x] Intégrer Leaflet + OpenStreetMap
+- [x] Centrer sur l'arrondissement demandé
+- [x] Afficher les limites de l'arrondissement
 
 ## v0.3 — Comparaison (post-POC)
 
