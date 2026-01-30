@@ -11,81 +11,108 @@
     <div class="widget" id="widget">
       <div class="header">
         <h2 id="title">Chargement...</h2>
-        <span class="badge" id="badge-type">Appartements</span>
-      </div>
-
-      <div class="map-wrapper">
-        <div id="map" class="map-container"></div>
-        <div id="map-legend" class="map-legend" style="display:none">
-          <span class="legend-label">8K</span>
-          <div class="legend-gradient"></div>
-          <span class="legend-label">25K</span>
-          <span class="legend-unit">&euro;/m&sup2;</span>
+        <div class="header-actions">
+          <span class="badge" id="badge-type">Appartements</span>
+          <button class="fullscreen-toggle" id="btn-fullscreen" type="button" title="Plein &eacute;cran" style="display:none">
+            <svg id="fullscreen-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="4,1 1,1 1,4"/>
+              <polyline points="12,1 15,1 15,4"/>
+              <polyline points="4,15 1,15 1,12"/>
+              <polyline points="12,15 15,15 15,12"/>
+            </svg>
+          </button>
         </div>
       </div>
 
-      <div class="stats" id="stats">
-        <div class="stat">
-          <span class="stat-label">Prix moyen</span>
-          <span class="stat-value" id="prix-moyen">—</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">Prix m&eacute;dian</span>
-          <span class="stat-value" id="prix-median">—</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">Nb. ventes</span>
-          <span class="stat-value" id="nb-ventes">—</span>
-        </div>
+      <div class="search-bar" id="search-bar" style="display:none">
+        <input type="text" class="search-input" id="search-input" placeholder="Rechercher une adresse..." />
+        <select class="arr-select" id="arr-select">
+          <option value="">Arrondissement...</option>
+        </select>
+        <button class="search-btn" id="search-btn" type="button">Rechercher</button>
       </div>
 
-      <div id="address-section" class="address-section" style="display:none">
-        <div class="address-label" id="address-label"></div>
-        <div class="address-comparison" id="address-comparison">
-          <div class="address-col">
-            <span class="address-col-title" id="addr-section-title">Votre zone</span>
-            <span class="address-col-value" id="addr-section-value">--</span>
-            <span class="address-col-detail" id="addr-section-ventes"></span>
-          </div>
-          <div class="address-ecart" id="address-ecart"></div>
-          <div class="address-col">
-            <span class="address-col-title" id="addr-arr-title">Arrondissement</span>
-            <span class="address-col-value" id="addr-arr-value">--</span>
-            <span class="address-col-detail" id="addr-arr-ventes"></span>
+      <div class="content-layout" id="content-layout">
+        <div class="content-map">
+          <div class="map-wrapper">
+            <div id="map" class="map-container"></div>
+            <div id="map-legend" class="map-legend" style="display:none">
+              <span class="legend-label">8K</span>
+              <div class="legend-gradient"></div>
+              <span class="legend-label">25K</span>
+              <span class="legend-unit">&euro;/m&sup2;</span>
+            </div>
+            <div class="loading-overlay" id="loading-overlay" style="display:none">
+              <div class="loading-spinner"></div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div id="compare-section" class="compare-section" style="display:none">
-        <div id="chart-container" class="chart-container"></div>
-      </div>
-
-      <div id="section-info" class="section-info" style="display:none">
-        <div class="section-info-header">
-          <span id="section-info-title" class="section-info-title">Section AK</span>
-          <button id="section-info-close" class="section-info-close" type="button">&times;</button>
-        </div>
-        <div class="address-comparison">
-          <div class="address-col">
-            <span class="address-col-title" id="si-section-title">Section</span>
-            <span class="address-col-value" id="si-section-value">--</span>
-            <span class="address-col-detail" id="si-section-ventes"></span>
+        <div class="content-info">
+          <div class="stats" id="stats">
+            <div class="stat">
+              <span class="stat-label">Prix moyen</span>
+              <span class="stat-value" id="prix-moyen">&mdash;</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Prix m&eacute;dian</span>
+              <span class="stat-value" id="prix-median">&mdash;</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Nb. ventes</span>
+              <span class="stat-value" id="nb-ventes">&mdash;</span>
+            </div>
           </div>
-          <div class="address-ecart" id="si-ecart"></div>
-          <div class="address-col">
-            <span class="address-col-title" id="si-arr-title">Arrondissement</span>
-            <span class="address-col-value" id="si-arr-value">--</span>
-            <span class="address-col-detail" id="si-arr-ventes"></span>
+
+          <div id="address-section" class="address-section" style="display:none">
+            <div class="address-label" id="address-label"></div>
+            <div class="address-comparison" id="address-comparison">
+              <div class="address-col">
+                <span class="address-col-title" id="addr-section-title">Votre zone</span>
+                <span class="address-col-value" id="addr-section-value">--</span>
+                <span class="address-col-detail" id="addr-section-ventes"></span>
+              </div>
+              <div class="address-ecart" id="address-ecart"></div>
+              <div class="address-col">
+                <span class="address-col-title" id="addr-arr-title">Arrondissement</span>
+                <span class="address-col-value" id="addr-arr-value">--</span>
+                <span class="address-col-detail" id="addr-arr-ventes"></span>
+              </div>
+            </div>
           </div>
+
+          <div id="compare-section" class="compare-section" style="display:none">
+            <div id="chart-container" class="chart-container"></div>
+          </div>
+
+          <div id="section-info" class="section-info" style="display:none">
+            <div class="section-info-header">
+              <span id="section-info-title" class="section-info-title">Section AK</span>
+              <button id="section-info-close" class="section-info-close" type="button">&times;</button>
+            </div>
+            <div class="address-comparison">
+              <div class="address-col">
+                <span class="address-col-title" id="si-section-title">Section</span>
+                <span class="address-col-value" id="si-section-value">--</span>
+                <span class="address-col-detail" id="si-section-ventes"></span>
+              </div>
+              <div class="address-ecart" id="si-ecart"></div>
+              <div class="address-col">
+                <span class="address-col-title" id="si-arr-title">Arrondissement</span>
+                <span class="address-col-value" id="si-arr-value">--</span>
+                <span class="address-col-detail" id="si-arr-ventes"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="toggle-row">
+            <button class="toggle active" id="btn-appart" type="button">Appartements</button>
+            <button class="toggle" id="btn-maison" type="button">Maisons</button>
+          </div>
+
+          <p class="source">Source : DVF (data.gouv.fr)</p>
         </div>
       </div>
-
-      <div class="toggle-row">
-        <button class="toggle active" id="btn-appart" type="button">Appartements</button>
-        <button class="toggle" id="btn-maison" type="button">Maisons</button>
-      </div>
-
-      <p class="source">Source : DVF (data.gouv.fr)</p>
     </div>
   </main>
   <script type="module" src="/src/mcp-app.ts"></script>

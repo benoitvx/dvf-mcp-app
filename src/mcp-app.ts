@@ -66,6 +66,10 @@ function isAddressData(d: ToolResultData): d is DvfAddressData {
   return (d as DvfAddressData).mode === "address";
 }
 
+// ---------------------------------------------------------------------------
+// DOM refs
+// ---------------------------------------------------------------------------
+
 const mainEl = document.querySelector(".main") as HTMLElement;
 const titleEl = document.getElementById("title")!;
 const badgeEl = document.getElementById("badge-type")!;
@@ -98,6 +102,19 @@ const siArrVentesEl = document.getElementById("si-arr-ventes")!;
 const siEcartEl = document.getElementById("si-ecart")!;
 const mapLegendEl = document.getElementById("map-legend")!;
 
+// Fullscreen + search refs
+const btnFullscreen = document.getElementById("btn-fullscreen")! as HTMLButtonElement;
+const fullscreenIcon = document.getElementById("fullscreen-icon")!;
+const searchBarEl = document.getElementById("search-bar")!;
+const searchInputEl = document.getElementById("search-input")! as HTMLInputElement;
+const searchBtnEl = document.getElementById("search-btn")! as HTMLButtonElement;
+const arrSelectEl = document.getElementById("arr-select")! as HTMLSelectElement;
+const loadingOverlayEl = document.getElementById("loading-overlay")!;
+
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+
 let currentStats: DvfStats | null = null;
 let compareData: DvfCompareData | null = null;
 let addressData: DvfAddressData | null = null;
@@ -113,6 +130,21 @@ let sectionsLayer: L.GeoJSON | null = null;
 let sectionsData: SectionsData | null = null;
 let selectedSection: string | null = null;
 let arrondissementStats: DvfStats | null = null;
+
+let currentDisplayMode: "inline" | "fullscreen" = "inline";
+let isLoading = false;
+let canCallServerTools = false;
+
+// ---------------------------------------------------------------------------
+// SVG icons for fullscreen toggle
+// ---------------------------------------------------------------------------
+
+const ICON_EXPAND = `<polyline points="4,1 1,1 1,4"/><polyline points="12,1 15,1 15,4"/><polyline points="4,15 1,15 1,12"/><polyline points="12,15 15,15 15,12"/>`;
+const ICON_COLLAPSE = `<polyline points="1,4 4,4 4,1"/><polyline points="15,4 12,4 12,1"/><polyline points="1,12 4,12 4,15"/><polyline points="15,12 12,12 12,15"/>`;
+
+// ---------------------------------------------------------------------------
+// Map
+// ---------------------------------------------------------------------------
 
 function initMap() {
   const mapEl = document.getElementById("map");
@@ -144,6 +176,13 @@ function initMap() {
   );
 
   new ResizeObserver(() => map?.invalidateSize()).observe(mapEl);
+
+  // Enable scroll zoom in fullscreen
+  if (currentDisplayMode === "fullscreen") {
+    map.scrollWheelZoom.enable();
+    map.zoomControl = L.control.zoom({ position: "topright" });
+    map.zoomControl.addTo(map);
+  }
 }
 
 function highlightArrondissements(num1: number, num2?: number) {
@@ -453,6 +492,10 @@ function renderBarChart(
   container.innerHTML = svg;
 }
 
+// ---------------------------------------------------------------------------
+// Render modes
+// ---------------------------------------------------------------------------
+
 function renderSingle() {
   if (!currentStats) return;
   const d = currentStats[currentType];
@@ -548,7 +591,6 @@ function renderAddress() {
     addrArrValueEl.textContent = `${fmt(arrD.prix_median)} \u20AC/m\u00B2`;
     addrArrVentesEl.textContent = `${fmt(arrD.nb_ventes)} ventes`;
 
-    // Calcul écart % côté client pour le type courant
     let ecart: number | null = null;
     if (secD.prix_median > 0 && arrD.prix_median > 0) {
       ecart = Math.round(
@@ -561,27 +603,26 @@ function renderAddress() {
       addressEcartEl.textContent = `${sign}${ecart} %`;
       addressEcartEl.className = `address-ecart ${ecart > 0 ? "positive" : ecart < 0 ? "negative" : "neutral"}`;
     } else {
-      addressEcartEl.textContent = "—";
+      addressEcartEl.textContent = "\u2014";
       addressEcartEl.className = "address-ecart neutral";
     }
 
-    addressLabelEl.textContent = `Prix médian ${typeData === "appartements" ? "appartements" : "maisons"}`;
+    addressLabelEl.textContent = `Prix m\u00E9dian ${typeData === "appartements" ? "appartements" : "maisons"}`;
   } else {
-    // Pas de section → afficher uniquement les stats arrondissement
     const arrD = arr[typeData];
 
     addrSectionTitleEl.textContent = "Votre zone";
     addrSectionValueEl.textContent = "N/A";
-    addrSectionVentesEl.textContent = "Données indisponibles";
+    addrSectionVentesEl.textContent = "Donn\u00E9es indisponibles";
 
     addrArrTitleEl.textContent = `${arr.nom}`;
     addrArrValueEl.textContent = `${fmt(arrD.prix_median)} \u20AC/m\u00B2`;
     addrArrVentesEl.textContent = `${fmt(arrD.nb_ventes)} ventes`;
 
-    addressEcartEl.textContent = "—";
+    addressEcartEl.textContent = "\u2014";
     addressEcartEl.className = "address-ecart neutral";
 
-    addressLabelEl.textContent = `Prix médian ${typeData === "appartements" ? "appartements" : "maisons"} (section non disponible)`;
+    addressLabelEl.textContent = `Prix m\u00E9dian ${typeData === "appartements" ? "appartements" : "maisons"} (section non disponible)`;
   }
 }
 
@@ -605,38 +646,76 @@ function setType(type: "appartements" | "maisons") {
 btnAppart.addEventListener("click", () => setType("appartements"));
 btnMaison.addEventListener("click", () => setType("maisons"));
 
-function handleHostContext(ctx: McpUiHostContext) {
-  if (ctx.theme) applyDocumentTheme(ctx.theme);
-  if (ctx.styles?.variables) applyHostStyleVariables(ctx.styles.variables);
-  if (ctx.styles?.css?.fonts) applyHostFonts(ctx.styles.css.fonts);
-  if (ctx.safeAreaInsets) {
-    mainEl.style.paddingTop = `${ctx.safeAreaInsets.top}px`;
-    mainEl.style.paddingRight = `${ctx.safeAreaInsets.right}px`;
-    mainEl.style.paddingBottom = `${ctx.safeAreaInsets.bottom}px`;
-    mainEl.style.paddingLeft = `${ctx.safeAreaInsets.left}px`;
+// ---------------------------------------------------------------------------
+// Display mode (fullscreen)
+// ---------------------------------------------------------------------------
+
+function updateDisplayMode(mode: "inline" | "fullscreen") {
+  currentDisplayMode = mode;
+
+  if (mode === "fullscreen") {
+    mainEl.classList.add("fullscreen-mode");
+    searchBarEl.style.display = canCallServerTools ? "" : "none";
+    fullscreenIcon.innerHTML = ICON_COLLAPSE;
+    btnFullscreen.title = "R\u00E9duire";
+
+    // Enable scroll zoom + zoom control in fullscreen
+    if (map) {
+      map.scrollWheelZoom.enable();
+      if (!(map as unknown as Record<string, unknown>)._dvfZoomCtrl) {
+        const ctrl = L.control.zoom({ position: "topright" });
+        ctrl.addTo(map);
+        (map as unknown as Record<string, unknown>)._dvfZoomCtrl = ctrl;
+      }
+    }
+  } else {
+    mainEl.classList.remove("fullscreen-mode");
+    searchBarEl.style.display = "none";
+    fullscreenIcon.innerHTML = ICON_EXPAND;
+    btnFullscreen.title = "Plein \u00E9cran";
+
+    // Disable scroll zoom + remove zoom control in inline
+    if (map) {
+      map.scrollWheelZoom.disable();
+      const ctrl = (map as unknown as Record<string, unknown>)._dvfZoomCtrl as L.Control | undefined;
+      if (ctrl) {
+        map.removeControl(ctrl);
+        (map as unknown as Record<string, unknown>)._dvfZoomCtrl = undefined;
+      }
+    }
   }
+
+  // Invalidate map after CSS transition
+  setTimeout(() => {
+    map?.invalidateSize();
+  }, 350);
 }
 
-const app = new App({ name: "DVF Paris", version: "0.6.0" });
+// ---------------------------------------------------------------------------
+// Loading state
+// ---------------------------------------------------------------------------
 
-app.onteardown = async () => ({});
+function showLoading() {
+  isLoading = true;
+  loadingOverlayEl.style.display = "";
+  searchBtnEl.disabled = true;
+}
 
-app.ontoolinput = (params) => {
-  const args = params.arguments as
-    | { arrondissement?: number; arrondissement_1?: number; arrondissement_2?: number; adresse?: string }
-    | undefined;
-  if (args?.adresse) {
-    titleEl.textContent = `Recherche : ${args.adresse}...`;
-  } else if (args?.arrondissement_1 && args?.arrondissement_2) {
-    titleEl.textContent = `Paris ${args.arrondissement_1}e vs ${args.arrondissement_2}e...`;
-  } else if (args?.arrondissement) {
-    titleEl.textContent = `Paris ${args.arrondissement}e...`;
-  }
-};
+function hideLoading() {
+  isLoading = false;
+  loadingOverlayEl.style.display = "none";
+  searchBtnEl.disabled = false;
+}
 
-app.ontoolresult = (result: CallToolResult) => {
+// ---------------------------------------------------------------------------
+// Process tool result (shared between ontoolresult and callServerTool)
+// ---------------------------------------------------------------------------
+
+function processToolResult(result: CallToolResult) {
   const payload = result.structuredContent as ToolResultData | undefined;
   if (!payload) return;
+
+  hideLoading();
 
   currentType = "appartements";
   btnAppart.classList.add("active");
@@ -650,7 +729,6 @@ app.ontoolresult = (result: CallToolResult) => {
     currentStats = null;
     arrondissementStats = payload.arrondissement;
 
-    // Load sections data if available
     clearSectionsLayer();
     if (payload.sections) {
       sectionsData = payload.sections;
@@ -661,10 +739,8 @@ app.ontoolresult = (result: CallToolResult) => {
     highlightArrondissements(payload.address.arrondissement);
     addMarker(payload.address.lat, payload.address.lon, payload.address.label);
 
-    // Render sections choropleth with the address section highlighted
     if (sectionsData) {
       renderSectionsLayer(payload.address.section);
-      // Fit to sections bounds so sections are visible, then ensure marker is centered
       if (sectionsLayer) {
         map?.fitBounds(sectionsLayer.getBounds(), { padding: [20, 20] });
       }
@@ -693,7 +769,6 @@ app.ontoolresult = (result: CallToolResult) => {
     currentStats = payload;
     arrondissementStats = payload;
 
-    // Load sections data if available
     clearSectionsLayer();
     if (payload.sections) {
       sectionsData = payload.sections;
@@ -703,15 +778,160 @@ app.ontoolresult = (result: CallToolResult) => {
     initMap();
     highlightArrondissements(payload.arrondissement);
 
-    // Render sections choropleth
     if (sectionsData) {
       renderSectionsLayer();
-      // Fit to sections bounds so sections fill the map
       if (sectionsLayer) {
         map?.fitBounds(sectionsLayer.getBounds(), { padding: [20, 20] });
       }
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// Search from UI (callServerTool)
+// ---------------------------------------------------------------------------
+
+async function searchAddress(adresse: string) {
+  if (!adresse.trim() || isLoading) return;
+
+  showLoading();
+  titleEl.textContent = `Recherche : ${adresse}...`;
+
+  try {
+    const result = await app.callServerTool({
+      name: "search-dvf-address",
+      arguments: { adresse },
+    });
+    processToolResult(result);
+  } catch (error) {
+    hideLoading();
+    titleEl.textContent = "Erreur de recherche";
+    console.error("[DVF] searchAddress error:", error);
+  }
+}
+
+async function loadArrondissement(arrondissement: number) {
+  if (isLoading) return;
+
+  showLoading();
+  titleEl.textContent = `Paris ${arrondissement}e...`;
+
+  try {
+    const result = await app.callServerTool({
+      name: "get-dvf-stats",
+      arguments: { arrondissement },
+    });
+    processToolResult(result);
+  } catch (error) {
+    hideLoading();
+    titleEl.textContent = "Erreur de chargement";
+    console.error("[DVF] loadArrondissement error:", error);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Search bar event listeners
+// ---------------------------------------------------------------------------
+
+searchBtnEl.addEventListener("click", () => {
+  const val = searchInputEl.value.trim();
+  if (val) searchAddress(val);
+});
+
+searchInputEl.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    const val = searchInputEl.value.trim();
+    if (val) searchAddress(val);
+  }
+});
+
+function populateArrSelect() {
+  for (let i = 1; i <= 20; i++) {
+    const opt = document.createElement("option");
+    opt.value = String(i);
+    opt.textContent = `${i}e arr.`;
+    arrSelectEl.appendChild(opt);
+  }
+}
+
+populateArrSelect();
+
+arrSelectEl.addEventListener("change", () => {
+  const val = parseInt(arrSelectEl.value, 10);
+  if (val >= 1 && val <= 20) {
+    loadArrondissement(val);
+    arrSelectEl.value = "";
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Fullscreen button
+// ---------------------------------------------------------------------------
+
+btnFullscreen.addEventListener("click", async () => {
+  const ctx = app.getHostContext();
+  const available = ctx?.availableDisplayModes as string[] | undefined;
+  if (!available) return;
+
+  const target = currentDisplayMode === "fullscreen" ? "inline" : "fullscreen";
+  if (!available.includes(target)) return;
+
+  try {
+    const result = await app.requestDisplayMode({ mode: target as "inline" | "fullscreen" });
+    updateDisplayMode(result.mode as "inline" | "fullscreen");
+  } catch (error) {
+    console.error("[DVF] requestDisplayMode error:", error);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Host context
+// ---------------------------------------------------------------------------
+
+function handleHostContext(ctx: McpUiHostContext) {
+  if (ctx.theme) applyDocumentTheme(ctx.theme);
+  if (ctx.styles?.variables) applyHostStyleVariables(ctx.styles.variables);
+  if (ctx.styles?.css?.fonts) applyHostFonts(ctx.styles.css.fonts);
+  if (ctx.safeAreaInsets) {
+    mainEl.style.paddingTop = `${ctx.safeAreaInsets.top}px`;
+    mainEl.style.paddingRight = `${ctx.safeAreaInsets.right}px`;
+    mainEl.style.paddingBottom = `${ctx.safeAreaInsets.bottom}px`;
+    mainEl.style.paddingLeft = `${ctx.safeAreaInsets.left}px`;
+  }
+
+  // React to display mode changes from host
+  const hostMode = ctx.displayMode as "inline" | "fullscreen" | undefined;
+  if (hostMode && hostMode !== currentDisplayMode && (hostMode === "inline" || hostMode === "fullscreen")) {
+    updateDisplayMode(hostMode);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// App setup
+// ---------------------------------------------------------------------------
+
+const app = new App(
+  { name: "DVF Paris", version: "0.8.0" },
+  { availableDisplayModes: ["inline", "fullscreen"] },
+);
+
+app.onteardown = async () => ({});
+
+app.ontoolinput = (params) => {
+  const args = params.arguments as
+    | { arrondissement?: number; arrondissement_1?: number; arrondissement_2?: number; adresse?: string }
+    | undefined;
+  if (args?.adresse) {
+    titleEl.textContent = `Recherche : ${args.adresse}...`;
+  } else if (args?.arrondissement_1 && args?.arrondissement_2) {
+    titleEl.textContent = `Paris ${args.arrondissement_1}e vs ${args.arrondissement_2}e...`;
+  } else if (args?.arrondissement) {
+    titleEl.textContent = `Paris ${args.arrondissement}e...`;
+  }
+};
+
+app.ontoolresult = (result: CallToolResult) => {
+  processToolResult(result);
 };
 
 app.onerror = console.error;
@@ -720,4 +940,29 @@ app.onhostcontextchanged = handleHostContext;
 app.connect().then(() => {
   const ctx = app.getHostContext();
   if (ctx) handleHostContext(ctx);
+
+  // Show/hide fullscreen button based on host support
+  const available = ctx?.availableDisplayModes as string[] | undefined;
+  if (available && available.includes("fullscreen")) {
+    btnFullscreen.style.display = "";
+  }
+
+  // Check serverTools capability
+  const caps = app.getHostCapabilities();
+  if (caps?.serverTools) {
+    canCallServerTools = true;
+  }
+
+  // If search bar elements should be disabled without serverTools
+  if (!canCallServerTools) {
+    searchInputEl.disabled = true;
+    searchBtnEl.disabled = true;
+    arrSelectEl.disabled = true;
+  }
+
+  // Apply initial display mode if already fullscreen
+  const initialMode = ctx?.displayMode as "inline" | "fullscreen" | undefined;
+  if (initialMode === "fullscreen") {
+    updateDisplayMode("fullscreen");
+  }
 });

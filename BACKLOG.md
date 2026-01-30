@@ -393,14 +393,19 @@ L'iframe ne peut pas faire de nouveaux appels au serveur MCP après le render in
 
 ---
 
-## v0.8 — UI Full-screen (optionnel) 🖥️
+## v0.8 — UI Fullscreen avec navigation interactive ✅
 
-**Objectif** : Mode expanded pour une vraie app interactive
+**Objectif** : Mode expanded plein ecran avec layout split, recherche interactive depuis l'UI
 
-- [ ] Bouton expand/collapse dans le header
-- [ ] Widget passe à 100% viewport
-- [ ] Layout responsive (mobile: stack, desktop: split)
-- [ ] Navigation interne (tabs ou breadcrumb)
+- [x] Bouton expand/collapse dans le header (icone SVG)
+- [x] Widget passe a 100vh en fullscreen (layout split 60/40)
+- [x] Barre de recherche : input adresse + dropdown arrondissement
+- [x] `app.callServerTool()` pour rechercher sans passer par Claude
+- [x] Loading overlay avec spinner
+- [x] Responsive mobile (stack vertical 50/50)
+- [x] Zoom molette + controles en fullscreen
+- [x] Widget inline elargi a 760px
+- [x] Detection capabilities host (fullscreen, serverTools)
 
 ---
 
@@ -421,10 +426,13 @@ v0.4 ✅ (données temps réel) ──┐
                               ├──▶ v0.5 ✅ (recherche adresse)
 v0.3 ✅ ──────────────────────┘              │
                                              ▼
-                                v0.6 ✅ (sections cliquables) ──▶ v1.0
+                                v0.6 ✅ (sections cliquables)
+                                             │
+                                             ▼
+                                v0.8 ✅ (fullscreen + recherche UI) ──▶ v1.0
 ```
 
-**MVP v1.0** = v0.4 + v0.5 + v0.6
+**MVP v1.0** = v0.4 + v0.5 + v0.6 + v0.8
 
 | Version | Impact UX | Effort | Status |
 |---------|-----------|--------|--------|
@@ -432,4 +440,4 @@ v0.3 ✅ ──────────────────────┘  
 | v0.5 | ⭐⭐⭐⭐⭐ | Moyen | ✅ Done |
 | v0.6 | ⭐⭐⭐⭐ | Moyen-Élevé | ✅ Done |
 | v0.7 | ⭐⭐ | Faible | Optionnel |
-| v0.8 | ⭐⭐⭐ | Élevé | Optionnel |
+| v0.8 | ⭐⭐⭐⭐ | Élevé | ✅ Done |

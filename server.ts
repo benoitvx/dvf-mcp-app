@@ -86,7 +86,7 @@ async function fetchSectionsDataForArr(arrondissement: number): Promise<Sections
 export function createServer(): McpServer {
   const server = new McpServer({
     name: "DVF Paris",
-    version: "0.6.0",
+    version: "0.8.0",
   });
 
   const resourceUri = "ui://dvf/mcp-app.html";

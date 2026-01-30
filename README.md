@@ -8,12 +8,14 @@ Built with the [MCP Apps SDK](https://github.com/modelcontextprotocol/ext-apps) 
 
 Ask Claude about Paris real estate prices and get an interactive widget with:
 
+- **Fullscreen mode** (v0.8): split layout with map (60%) and info panel (40%), interactive search
 - **Interactive map** (Leaflet + OpenStreetMap) highlighting the arrondissement
 - **Choropleth sections** (v0.6): cadastral sections colored by median price, clickable for details
 - **Price stats**: average price/m², median price/m², number of sales
 - **Apartments / Houses toggle**
 - **Comparison mode**: compare two arrondissements side-by-side with a bar chart
 - **Address search** (v0.5): search by address and get stats for the cadastral section
+- **UI-driven search** (v0.8): search addresses and browse arrondissements directly from the widget
 
 Data source: [DVF (Demandes de Valeurs Foncieres)](https://www.data.gouv.fr/fr/datasets/demandes-de-valeurs-foncieres-geolocalisees/) from data.gouv.fr.
 
@@ -136,7 +138,7 @@ dvf-mcp-app/
 - [x] **v0.5** — Address search with cadastral section stats
 - [x] **v0.6** — Choropleth cadastral sections (clickable, color-coded by price)
 - [ ] **v0.7** — Link to recent transactions (optional)
-- [ ] **v0.8** — Full-screen mode (optional)
+- [x] **v0.8** — Fullscreen mode with interactive search (split layout, callServerTool)
 
 ## License
 

@@ -4,8 +4,33 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ## [Unreleased]
 
-### Planned - v0.4 (reste)
-- Loading state dans l'UI (skeleton screen)
+---
+
+## [0.8.0] - 2026-01-30
+
+### Added
+- Mode fullscreen avec layout split horizontal (carte 60% + panneau info 40%)
+- Bouton expand/collapse dans le header (icone SVG)
+- Barre de recherche interactive en fullscreen : input adresse + dropdown arrondissement (1-20)
+- Appels `app.callServerTool()` depuis l'UI (recherche sans passer par Claude)
+- Loading overlay avec spinner sur la carte pendant les requetes
+- Zoom molette + controles zoom en fullscreen
+- Responsive mobile : `@media (max-width: 768px)` stack vertical 50/50
+
+### Changed
+- Widget inline elargi a `max-width: 760px` (au lieu de 380/450/520px selon le mode)
+- `App` constructor declare `availableDisplayModes: ["inline", "fullscreen"]`
+- `processToolResult()` extrait de `ontoolresult` pour reutilisation avec `callServerTool`
+- `handleHostContext()` reagit aux changements de `displayMode` du host
+- DOM restructure : `.header-actions`, `.search-bar`, `.content-layout` (grid container), `.content-map`, `.content-info`
+- Version bumped `0.6.0` -> `0.8.0`
+
+### Technical
+- Detection `getHostCapabilities().serverTools` avant d'activer la recherche UI
+- Detection `getHostContext().availableDisplayModes` avant d'afficher le bouton fullscreen
+- `map.invalidateSize()` apres transition CSS (350ms)
+- Search bar desactivee si host ne supporte pas `callServerTool`
+- Bouton fullscreen cache si host ne supporte pas le mode fullscreen
 
 ---
 

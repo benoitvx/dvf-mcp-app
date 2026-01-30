@@ -326,19 +326,18 @@ L'UI (`mcp-app.ts`) détecte le mode via `structuredContent` :
 ### Mode `single` (v0.1+)
 - Carte avec 1 arrondissement en surbrillance (bleu)
 - Grille de stats : prix moyen, médian, nb ventes
-- Widget 380px
 
 ### Mode `compare` (v0.3+)
 - Carte avec 2 arrondissements (bleu + orange)
 - Bar chart SVG 3 métriques
-- Widget 520px
 
 ### Mode `address` (v0.5+)
 - Carte centrée sur l'adresse avec marker
 - Section cadastrale en surbrillance
 - Stats comparées : section vs arrondissement
 - Indicateur écart en % ("+28% vs 7e")
-- Widget 450px
+
+> Widget inline : max-width 760px (v0.8+). Fullscreen : 100vh layout split.
 
 ### Mode `sections` (v0.6+)
 - Carte avec toutes les sections de l'arrondissement
@@ -346,11 +345,47 @@ L'UI (`mcp-app.ts`) détecte le mode via `structuredContent` :
 - Clic sur section → affiche stats dans panneau info
 - Légende de l'échelle de prix
 
+### Mode `fullscreen` (v0.8+)
+- Layout split horizontal : carte 60% + panneau info 40%
+- Barre de recherche interactive : input adresse + dropdown arrondissement
+- `app.callServerTool()` pour rechercher sans repasser par Claude
+- Loading overlay avec spinner
+- Zoom molette + contrôles zoom
+- Responsive mobile : stack vertical 50/50 sous 768px
+- Bouton expand/collapse dans le header
+
+```typescript
+// SDK APIs utilisées (v0.8)
+const app = new App(
+  { name: "DVF Paris", version: "0.8.0" },
+  { availableDisplayModes: ["inline", "fullscreen"] }
+);
+
+// Toggle fullscreen
+const result = await app.requestDisplayMode({ mode: "fullscreen" });
+
+// Recherche depuis l'UI (sans passer par Claude)
+const result = await app.callServerTool({
+  name: "search-dvf-address",
+  arguments: { adresse }
+});
+
+// Vérifier les capabilities du host
+const ctx = app.getHostContext();
+const supportsFullscreen = ctx?.availableDisplayModes?.includes("fullscreen");
+const caps = app.getHostCapabilities();
+const supportsServerTools = !!caps?.serverTools;
+```
+
 ```typescript
 // Détection du mode dans mcp-app.ts
 app.ontoolresult = (result) => {
+  processToolResult(result); // Factored pour réutilisation avec callServerTool
+};
+
+function processToolResult(result: CallToolResult) {
   const data = result.structuredContent;
-  
+
   if (data.mode === "compare") {
     renderCompare(data);
   } else if (data.mode === "address") {
@@ -358,12 +393,12 @@ app.ontoolresult = (result) => {
   } else {
     renderSingle(data);
   }
-  
+
   // Si sections disponibles, ajouter le layer cliquable
   if (data.sections) {
     renderSectionsLayer(data.sections.geojson, data.sections.stats);
   }
-};
+}
 ```
 
 ---
