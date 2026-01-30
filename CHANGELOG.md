@@ -4,6 +4,41 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ## [Unreleased]
 
+### Planned - v0.6
+- Carte avec sections cadastrales colorées (choropleth selon prix médian)
+- Clic sur section → affiche stats dans panneau info
+- Légende échelle de prix (8K → 25K €/m²)
+- GeoJSON sections via cadastre.data.gouv.fr
+- Jointure géométries + stats DVF
+
+### Planned - v0.5
+- Tool `search-dvf-address` : recherche par adresse parisienne
+- Géocodage via API Géoplateforme (remplace api-adresse.data.gouv.fr dépréciée)
+- Stats par section cadastrale (granularité ~500m vs arrondissement)
+- Comparaison section vs arrondissement avec écart en %
+- UI mode "address" : marker + section highlight + stats comparatives
+
+### Planned - v0.4
+- ~~Données temps réel via MCP data.gouv (remplace JSON statique)~~ ✅
+- ~~Client API `src/api/data-gouv.ts`~~ ✅
+- ~~Fallback vers JSON si API indisponible~~ ✅
+- Loading state dans l'UI
+
+---
+
+## [0.4.0] - 2026-01-30
+
+### Added
+- Données DVF temps réel via API tabulaire data.gouv.fr
+- Module `src/api/data-gouv.ts` : client API avec cache 5min et timeout 5s
+- Fallback automatique vers JSON statique si API indisponible
+- `fetchDvfStatsBySection()` prêt pour v0.5
+
+### Changed
+- `get-dvf-stats` et `compare-dvf-stats` appellent l'API au lieu du JSON
+- `compare-dvf-stats` utilise `Promise.all` (appels parallèles)
+- Type `DvfEntry` déplacé dans `src/api/data-gouv.ts`
+
 ---
 
 ## [0.3.0] - 2026-01-29

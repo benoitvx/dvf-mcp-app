@@ -278,7 +278,7 @@ function handleHostContext(ctx: McpUiHostContext) {
   }
 }
 
-const app = new App({ name: "DVF Paris", version: "0.3.0" });
+const app = new App({ name: "DVF Paris", version: "0.4.0" });
 
 app.onteardown = async () => ({});
 

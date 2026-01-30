@@ -1,6 +1,6 @@
 {
   "name": "dvf-paris-mcp-app",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "description": "MCP App affichant les prix immobiliers parisiens par arrondissement (source DVF)",
   "license": "MIT",
