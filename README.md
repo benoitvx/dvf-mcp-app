@@ -131,7 +131,7 @@ dvf-mcp-app/
 - [x] **v0.2** — Interactive map with Leaflet
 - [x] **v0.3** — Comparison mode (2 arrondissements)
 - [x] **v0.4** — Real-time data via data.gouv.fr API (with JSON fallback)
-- [ ] **v0.5** — Address search with cadastral section stats
+- [x] **v0.5** — Address search with cadastral section stats
 - [ ] **v0.6** — Cadastral parcels overlay (optional)
 - [ ] **v0.7** — Link to recent transactions (optional)
 - [ ] **v0.8** — Full-screen mode (optional)
