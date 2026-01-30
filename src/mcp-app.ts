@@ -897,6 +897,8 @@ function handleHostContext(ctx: McpUiHostContext) {
     mainEl.style.paddingRight = `${ctx.safeAreaInsets.right}px`;
     mainEl.style.paddingBottom = `${ctx.safeAreaInsets.bottom}px`;
     mainEl.style.paddingLeft = `${ctx.safeAreaInsets.left}px`;
+    // Expose bottom inset for fullscreen height calculation
+    mainEl.style.setProperty("--safe-area-bottom", `${ctx.safeAreaInsets.bottom}px`);
   }
 
   // React to display mode changes from host

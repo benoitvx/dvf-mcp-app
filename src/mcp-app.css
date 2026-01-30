@@ -473,7 +473,7 @@ html, body {
 }
 
 .main.fullscreen-mode .widget {
-  height: 100vh;
+  height: calc(100vh - var(--safe-area-bottom, 0px));
   display: flex;
   flex-direction: column;
   border: none;
