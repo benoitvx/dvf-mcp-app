@@ -19,10 +19,26 @@ interface DvfStats {
   coords: { lat: number; lon: number };
 }
 
+interface SectionStatsEntry {
+  code: string;
+  nom: string;
+  appartements: { prix_moyen: number; prix_median: number; nb_ventes: number };
+  maisons: { prix_moyen: number; prix_median: number; nb_ventes: number };
+}
+
+interface SectionsData {
+  geojson: GeoJSON.FeatureCollection;
+  stats: Record<string, SectionStatsEntry>;
+}
+
 interface DvfCompareData {
   mode: "compare";
   arrondissement_1: DvfStats;
   arrondissement_2: DvfStats;
+}
+
+interface DvfSingleData extends DvfStats {
+  sections?: SectionsData;
 }
 
 interface DvfAddressData {
@@ -37,9 +53,10 @@ interface DvfAddressData {
   section: DvfStats | null;
   arrondissement: DvfStats;
   ecart_pct: number | null;
+  sections?: SectionsData;
 }
 
-type ToolResultData = DvfStats | DvfCompareData | DvfAddressData;
+type ToolResultData = DvfSingleData | DvfCompareData | DvfAddressData;
 
 function isCompareData(d: ToolResultData): d is DvfCompareData {
   return (d as DvfCompareData).mode === "compare";
@@ -69,6 +86,17 @@ const addrArrTitleEl = document.getElementById("addr-arr-title")!;
 const addrArrValueEl = document.getElementById("addr-arr-value")!;
 const addrArrVentesEl = document.getElementById("addr-arr-ventes")!;
 const addressEcartEl = document.getElementById("address-ecart")!;
+const sectionInfoEl = document.getElementById("section-info")!;
+const sectionInfoTitleEl = document.getElementById("section-info-title")!;
+const sectionInfoCloseEl = document.getElementById("section-info-close")!;
+const siSectionTitleEl = document.getElementById("si-section-title")!;
+const siSectionValueEl = document.getElementById("si-section-value")!;
+const siSectionVentesEl = document.getElementById("si-section-ventes")!;
+const siArrTitleEl = document.getElementById("si-arr-title")!;
+const siArrValueEl = document.getElementById("si-arr-value")!;
+const siArrVentesEl = document.getElementById("si-arr-ventes")!;
+const siEcartEl = document.getElementById("si-ecart")!;
+const mapLegendEl = document.getElementById("map-legend")!;
 
 let currentStats: DvfStats | null = null;
 let compareData: DvfCompareData | null = null;
@@ -81,6 +109,10 @@ let map: L.Map | null = null;
 let highlightLayer: L.GeoJSON | null = null;
 let highlightLayer2: L.GeoJSON | null = null;
 let markerLayer: L.Marker | null = null;
+let sectionsLayer: L.GeoJSON | null = null;
+let sectionsData: SectionsData | null = null;
+let selectedSection: string | null = null;
+let arrondissementStats: DvfStats | null = null;
 
 function initMap() {
   const mapEl = document.getElementById("map");
@@ -189,6 +221,161 @@ function addMarker(lat: number, lon: number, label: string) {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Sections choropleth
+// ---------------------------------------------------------------------------
+
+function getPriceColor(prix: number): string {
+  const min = 8000;
+  const max = 25000;
+  const t = Math.max(0, Math.min(1, (prix - min) / (max - min)));
+
+  // Green (low) → Yellow → Red (high)
+  const r = Math.round(255 * Math.min(1, 2 * t));
+  const g = Math.round(255 * Math.min(1, 2 * (1 - t)));
+  return `rgb(${r}, ${g}, 0)`;
+}
+
+function clearSectionsLayer() {
+  if (sectionsLayer && map) {
+    map.removeLayer(sectionsLayer);
+    sectionsLayer = null;
+  }
+  sectionsData = null;
+  selectedSection = null;
+  sectionInfoEl.style.display = "none";
+  mapLegendEl.style.display = "none";
+}
+
+function renderSectionsLayer(highlightSectionCode?: string | null) {
+  if (!map || !sectionsData) return;
+
+  if (sectionsLayer) {
+    map.removeLayer(sectionsLayer);
+    sectionsLayer = null;
+  }
+
+  const geojson = sectionsData.geojson;
+  const stats = sectionsData.stats;
+
+  sectionsLayer = L.geoJSON(geojson, {
+    style: (feature) => {
+      if (!feature || !feature.properties) return {};
+      const sectionCode = feature.properties.id as string;
+      const sectionStats = stats[sectionCode];
+      const prix =
+        sectionStats?.[currentType]?.prix_median ?? 0;
+      const isHighlighted = sectionCode === highlightSectionCode;
+      return {
+        fillColor: prix > 0 ? getPriceColor(prix) : "#ccc",
+        fillOpacity: prix > 0 ? 0.55 : 0.2,
+        color: isHighlighted ? "#2563eb" : "#555",
+        weight: isHighlighted ? 3 : 1,
+      };
+    },
+    onEachFeature: (feature, layer) => {
+      const sectionCode = feature.properties?.id as string | undefined;
+      if (!sectionCode) return;
+
+      layer.on("click", () => {
+        selectedSection = sectionCode;
+        updateSectionInfo(sectionCode);
+        // Re-render to update highlight
+        renderSectionsLayer(sectionCode);
+      });
+
+      layer.on("mouseover", (e: L.LeafletMouseEvent) => {
+        if (sectionCode !== selectedSection) {
+          const target = e.target as L.Path;
+          target.setStyle({ weight: 2, color: "#333" });
+        }
+      });
+
+      layer.on("mouseout", (e: L.LeafletMouseEvent) => {
+        if (sectionCode !== selectedSection) {
+          const target = e.target as L.Path;
+          const sectionStats = stats[sectionCode];
+          const prix =
+            sectionStats?.[currentType]?.prix_median ?? 0;
+          target.setStyle({
+            weight: 1,
+            color: "#555",
+            fillColor: prix > 0 ? getPriceColor(prix) : "#ccc",
+          });
+        }
+      });
+
+      // Tooltip with section name + price
+      const sectionStats = stats[sectionCode];
+      if (sectionStats) {
+        const prix = sectionStats[currentType]?.prix_median ?? 0;
+        const tooltipText = prix > 0
+          ? `${sectionStats.nom} — ${fmt(prix)} \u20AC/m\u00B2`
+          : sectionStats.nom;
+        layer.bindTooltip(tooltipText, {
+          sticky: true,
+          direction: "top",
+          offset: [0, -10],
+        });
+      }
+    },
+  }).addTo(map);
+
+  mapLegendEl.style.display = "";
+}
+
+function updateSectionInfo(sectionCode: string) {
+  if (!sectionsData || !arrondissementStats) return;
+
+  const secStats = sectionsData.stats[sectionCode];
+  if (!secStats) {
+    sectionInfoEl.style.display = "none";
+    return;
+  }
+
+  const secD = secStats[currentType];
+  const arrD = arrondissementStats[currentType];
+
+  sectionInfoTitleEl.textContent = secStats.nom;
+  siSectionTitleEl.textContent = secStats.nom;
+  siSectionValueEl.textContent = `${fmt(secD.prix_median)} \u20AC/m\u00B2`;
+  siSectionVentesEl.textContent = `${fmt(secD.nb_ventes)} ventes`;
+
+  siArrTitleEl.textContent = arrondissementStats.nom;
+  siArrValueEl.textContent = `${fmt(arrD.prix_median)} \u20AC/m\u00B2`;
+  siArrVentesEl.textContent = `${fmt(arrD.nb_ventes)} ventes`;
+
+  let ecart: number | null = null;
+  if (secD.prix_median > 0 && arrD.prix_median > 0) {
+    ecart = Math.round(
+      ((secD.prix_median - arrD.prix_median) / arrD.prix_median) * 100,
+    );
+  }
+
+  if (ecart != null) {
+    const sign = ecart > 0 ? "+" : "";
+    siEcartEl.textContent = `${sign}${ecart} %`;
+    siEcartEl.className = `address-ecart ${ecart > 0 ? "positive" : ecart < 0 ? "negative" : "neutral"}`;
+  } else {
+    siEcartEl.textContent = "\u2014";
+    siEcartEl.className = "address-ecart neutral";
+  }
+
+  sectionInfoEl.style.display = "";
+}
+
+sectionInfoCloseEl.addEventListener("click", () => {
+  sectionInfoEl.style.display = "none";
+  selectedSection = null;
+  if (sectionsData) {
+    renderSectionsLayer();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Formatting
+// ---------------------------------------------------------------------------
+
 function fmt(n: number): string {
   return n.toLocaleString("fr-FR");
 }
@@ -281,6 +468,14 @@ function renderSingle() {
   mainEl.classList.remove("compare-mode");
   mainEl.classList.remove("address-mode");
   clearMarker();
+
+  // Re-render sections choropleth if data available
+  if (sectionsData) {
+    renderSectionsLayer(selectedSection);
+    if (selectedSection) {
+      updateSectionInfo(selectedSection);
+    }
+  }
 }
 
 function renderCompare() {
@@ -295,9 +490,11 @@ function renderCompare() {
   statsEl.style.display = "none";
   compareSectionEl.style.display = "";
   addressSectionEl.style.display = "none";
+  sectionInfoEl.style.display = "none";
   mainEl.classList.add("compare-mode");
   mainEl.classList.remove("address-mode");
   clearMarker();
+  clearSectionsLayer();
 
   const d1 = a1[currentType];
   const d2 = a2[currentType];
@@ -326,6 +523,14 @@ function renderAddress() {
   addressSectionEl.style.display = "";
   mainEl.classList.remove("compare-mode");
   mainEl.classList.add("address-mode");
+
+  // Re-render sections choropleth if data available
+  if (sectionsData) {
+    renderSectionsLayer(selectedSection ?? addr.section);
+    if (selectedSection) {
+      updateSectionInfo(selectedSection);
+    }
+  }
 
   const typeData = currentType;
 
@@ -412,7 +617,7 @@ function handleHostContext(ctx: McpUiHostContext) {
   }
 }
 
-const app = new App({ name: "DVF Paris", version: "0.5.0" });
+const app = new App({ name: "DVF Paris", version: "0.6.0" });
 
 app.onteardown = async () => ({});
 
@@ -443,17 +648,37 @@ app.ontoolresult = (result: CallToolResult) => {
     addressData = payload;
     compareData = null;
     currentStats = null;
+    arrondissementStats = payload.arrondissement;
+
+    // Load sections data if available
+    clearSectionsLayer();
+    if (payload.sections) {
+      sectionsData = payload.sections;
+    }
+
     render();
     initMap();
     highlightArrondissements(payload.address.arrondissement);
     addMarker(payload.address.lat, payload.address.lon, payload.address.label);
-    map?.setView([payload.address.lat, payload.address.lon], 15);
+
+    // Render sections choropleth with the address section highlighted
+    if (sectionsData) {
+      renderSectionsLayer(payload.address.section);
+      // Fit to sections bounds so sections are visible, then ensure marker is centered
+      if (sectionsLayer) {
+        map?.fitBounds(sectionsLayer.getBounds(), { padding: [20, 20] });
+      }
+    } else {
+      map?.setView([payload.address.lat, payload.address.lon], 15);
+    }
   } else if (isCompareData(payload)) {
     isCompareMode = true;
     isAddressMode = false;
     compareData = payload;
     currentStats = null;
     addressData = null;
+    arrondissementStats = null;
+    clearSectionsLayer();
     render();
     initMap();
     highlightArrondissements(
@@ -466,9 +691,26 @@ app.ontoolresult = (result: CallToolResult) => {
     compareData = null;
     addressData = null;
     currentStats = payload;
+    arrondissementStats = payload;
+
+    // Load sections data if available
+    clearSectionsLayer();
+    if (payload.sections) {
+      sectionsData = payload.sections;
+    }
+
     render();
     initMap();
     highlightArrondissements(payload.arrondissement);
+
+    // Render sections choropleth
+    if (sectionsData) {
+      renderSectionsLayer();
+      // Fit to sections bounds so sections fill the map
+      if (sectionsLayer) {
+        map?.fitBounds(sectionsLayer.getBounds(), { padding: [20, 20] });
+      }
+    }
   }
 };
 

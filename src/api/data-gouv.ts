@@ -41,6 +41,13 @@ export type DvfEntry = {
   coords: { lat: number; lon: number };
 };
 
+export interface SectionStatsEntry {
+  code: string;       // "75107000AK"
+  nom: string;        // "Section AK"
+  appartements: { prix_moyen: number; prix_median: number; nb_ventes: number };
+  maisons: { prix_moyen: number; prix_median: number; nb_ventes: number };
+}
+
 // ---------------------------------------------------------------------------
 // Coords statiques des 20 arrondissements (centres approximatifs)
 // ---------------------------------------------------------------------------
@@ -72,12 +79,12 @@ const ARRONDISSEMENT_COORDS: Record<number, { lat: number; lon: number }> = {
 // Cache mémoire
 // ---------------------------------------------------------------------------
 
-interface CacheEntry {
-  data: DvfEntry;
+interface CacheEntry<T> {
+  data: T;
   ts: number;
 }
 
-const cache = new Map<string, CacheEntry>();
+const cache = new Map<string, CacheEntry<DvfEntry>>();
 
 function cacheGet(key: string): DvfEntry | undefined {
   const entry = cache.get(key);
@@ -91,6 +98,22 @@ function cacheGet(key: string): DvfEntry | undefined {
 
 function cacheSet(key: string, data: DvfEntry): void {
   cache.set(key, { data, ts: Date.now() });
+}
+
+const sectionsCache = new Map<string, CacheEntry<Record<string, SectionStatsEntry>>>();
+
+function sectionsCacheGet(key: string): Record<string, SectionStatsEntry> | undefined {
+  const entry = sectionsCache.get(key);
+  if (!entry) return undefined;
+  if (Date.now() - entry.ts > CACHE_TTL_MS) {
+    sectionsCache.delete(key);
+    return undefined;
+  }
+  return entry.data;
+}
+
+function sectionsCacheSet(key: string, data: Record<string, SectionStatsEntry>): void {
+  sectionsCache.set(key, { data, ts: Date.now() });
 }
 
 // ---------------------------------------------------------------------------
@@ -185,4 +208,54 @@ export async function fetchDvfStatsBySection(sectionCode: string): Promise<DvfEn
   const entry = mapRowToDvfEntry(json.data[0], arrNum);
   cacheSet(cacheKey, entry);
   return entry;
+}
+
+// ---------------------------------------------------------------------------
+// Mapping section
+// ---------------------------------------------------------------------------
+
+function mapRowToSectionEntry(row: DvfApiRow): SectionStatsEntry {
+  // Extraire le code section (ex: "AK") depuis libelle_geo ou code_geo
+  const code = row.code_geo;
+  const sectionLetter = code.length >= 10 ? code.slice(-2) : code;
+  return {
+    code,
+    nom: `Section ${sectionLetter}`,
+    appartements: {
+      prix_moyen: Math.round(row.moy_prix_m2_whole_appartement ?? 0),
+      prix_median: Math.round(row.med_prix_m2_whole_appartement ?? 0),
+      nb_ventes: row.nb_ventes_whole_appartement ?? 0,
+    },
+    maisons: {
+      prix_moyen: Math.round(row.moy_prix_m2_whole_maison ?? 0),
+      prix_median: Math.round(row.med_prix_m2_whole_maison ?? 0),
+      nb_ventes: row.nb_ventes_whole_maison ?? 0,
+    },
+  };
+}
+
+/**
+ * Récupère les stats DVF de toutes les sections d'un arrondissement.
+ * Retourne un Record<sectionCode, SectionStatsEntry> pour lookup O(1).
+ */
+export async function fetchAllSectionStats(
+  arrondissement: number,
+): Promise<Record<string, SectionStatsEntry>> {
+  const codeInsee = `751${String(arrondissement).padStart(2, "0")}`;
+  const cacheKey = `all-sections-${codeInsee}`;
+
+  const cached = sectionsCacheGet(cacheKey);
+  if (cached) return cached;
+
+  const url = `${BASE_URL}?code_parent__exact=${codeInsee}&page_size=100`;
+  const res = await fetchWithTimeout(url);
+  const json = (await res.json()) as DvfApiResponse;
+
+  const result: Record<string, SectionStatsEntry> = {};
+  for (const row of json.data) {
+    result[row.code_geo] = mapRowToSectionEntry(row);
+  }
+
+  sectionsCacheSet(cacheKey, result);
+  return result;
 }

@@ -9,6 +9,7 @@ Built with the [MCP Apps SDK](https://github.com/modelcontextprotocol/ext-apps) 
 Ask Claude about Paris real estate prices and get an interactive widget with:
 
 - **Interactive map** (Leaflet + OpenStreetMap) highlighting the arrondissement
+- **Choropleth sections** (v0.6): cadastral sections colored by median price, clickable for details
 - **Price stats**: average price/m², median price/m², number of sales
 - **Apartments / Houses toggle**
 - **Comparison mode**: compare two arrondissements side-by-side with a bar chart
@@ -65,7 +66,7 @@ Claude                    MCP Server               UI (iframe)
 |-----|-------|
 | [MCP data.gouv](https://www.data.gouv.fr/datasets/statistiques-dvf/) | Real-time DVF stats |
 | [API Géoplateforme](https://geoservices.ign.fr/documentation/services/services-geoplateforme/geocodage) | Address geocoding |
-| [cadastre.data.gouv.fr](https://cadastre.data.gouv.fr/) | Cadastral parcels (planned) |
+| [cadastre.data.gouv.fr](https://cadastre.data.gouv.fr/) | Cadastral section geometries (GeoJSON) |
 
 ## Setup
 
@@ -115,6 +116,7 @@ dvf-mcp-app/
 │   ├── mcp-app.ts         # UI logic (map, chart, host communication)
 │   ├── mcp-app.css        # Widget styles
 │   ├── api/               # External API clients
+│   │   ├── cadastre.ts    # Cadastre GeoJSON client
 │   │   ├── data-gouv.ts   # MCP data.gouv client
 │   │   └── geoplateforme.ts # Geocoding client
 │   └── data/
@@ -132,7 +134,7 @@ dvf-mcp-app/
 - [x] **v0.3** — Comparison mode (2 arrondissements)
 - [x] **v0.4** — Real-time data via data.gouv.fr API (with JSON fallback)
 - [x] **v0.5** — Address search with cadastral section stats
-- [ ] **v0.6** — Cadastral parcels overlay (optional)
+- [x] **v0.6** — Choropleth cadastral sections (clickable, color-coded by price)
 - [ ] **v0.7** — Link to recent transactions (optional)
 - [ ] **v0.8** — Full-screen mode (optional)
 

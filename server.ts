@@ -12,7 +12,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
 
-import { fetchDvfStats, fetchDvfStatsBySection, type DvfEntry } from "./src/api/data-gouv.js";
+import { fetchDvfStats, fetchDvfStatsBySection, fetchAllSectionStats, type DvfEntry, type SectionStatsEntry } from "./src/api/data-gouv.js";
+import { fetchSectionsGeoJSON } from "./src/api/cadastre.js";
 import { geocodeAddress } from "./src/api/geoplateforme.js";
 import dvfData from "./src/data/dvf-paris.json" with { type: "json" };
 
@@ -38,6 +39,16 @@ type DvfAddressResult = {
   section: DvfEntry | null;
   arrondissement: DvfEntry;
   ecart_pct: number | null;
+  sections?: SectionsData;
+};
+
+type SectionsData = {
+  geojson: GeoJSON.FeatureCollection;
+  stats: Record<string, SectionStatsEntry>;
+};
+
+type DvfSingleResult = DvfEntry & {
+  sections?: SectionsData;
 };
 
 const fallbackData = dvfData as Record<string, DvfEntry>;
@@ -56,10 +67,26 @@ async function getDvfStats(arrondissement: number): Promise<DvfEntry> {
   }
 }
 
+async function fetchSectionsDataForArr(arrondissement: number): Promise<SectionsData | null> {
+  try {
+    const [geojson, stats] = await Promise.all([
+      fetchSectionsGeoJSON(arrondissement),
+      fetchAllSectionStats(arrondissement),
+    ]);
+    return { geojson, stats };
+  } catch (error) {
+    console.warn(
+      `[DVF] Sections data failed for arr. ${arrondissement}:`,
+      error instanceof Error ? error.message : error,
+    );
+    return null;
+  }
+}
+
 export function createServer(): McpServer {
   const server = new McpServer({
     name: "DVF Paris",
-    version: "0.5.0",
+    version: "0.6.0",
   });
 
   const resourceUri = "ui://dvf/mcp-app.html";
@@ -82,7 +109,15 @@ export function createServer(): McpServer {
     },
     async ({ arrondissement }): Promise<CallToolResult> => {
       try {
-        const stats = await getDvfStats(arrondissement);
+        const [stats, sectionsData] = await Promise.all([
+          getDvfStats(arrondissement),
+          fetchSectionsDataForArr(arrondissement),
+        ]);
+
+        const result: DvfSingleResult = { ...stats };
+        if (sectionsData) {
+          result.sections = sectionsData;
+        }
 
         return {
           content: [
@@ -91,7 +126,7 @@ export function createServer(): McpServer {
               text: `${stats.nom} — Appartements : ${stats.appartements.prix_moyen.toLocaleString("fr-FR")} €/m² (médian ${stats.appartements.prix_median.toLocaleString("fr-FR")} €/m², ${stats.appartements.nb_ventes} ventes). Maisons : ${stats.maisons.prix_moyen.toLocaleString("fr-FR")} €/m² (${stats.maisons.nb_ventes} ventes).`,
             },
           ],
-          structuredContent: stats,
+          structuredContent: result,
         };
       } catch {
         return {
@@ -189,7 +224,10 @@ export function createServer(): McpServer {
       try {
         const geo = await geocodeAddress(adresse);
 
-        const arrStats = await getDvfStats(geo.arrondissement);
+        const [arrStats, sectionsData] = await Promise.all([
+          getDvfStats(geo.arrondissement),
+          fetchSectionsDataForArr(geo.arrondissement),
+        ]);
 
         let sectionStats: DvfEntry | null = null;
         if (geo.section) {
@@ -224,6 +262,24 @@ export function createServer(): McpServer {
             ? ` (${ecartPct > 0 ? "+" : ""}${ecartPct} % vs ${geo.arrondissement}e)`
             : "";
 
+        const addressResult: DvfAddressResult = {
+          mode: "address",
+          address: {
+            label: geo.label,
+            lat: geo.lat,
+            lon: geo.lon,
+            arrondissement: geo.arrondissement,
+            section: geo.section,
+          },
+          section: sectionStats,
+          arrondissement: arrStats,
+          ecart_pct: ecartPct,
+        };
+
+        if (sectionsData) {
+          addressResult.sections = sectionsData;
+        }
+
         return {
           content: [
             {
@@ -231,19 +287,7 @@ export function createServer(): McpServer {
               text: `${geo.label} — ${prixLabel}${ecartLabel}`,
             },
           ],
-          structuredContent: {
-            mode: "address",
-            address: {
-              label: geo.label,
-              lat: geo.lat,
-              lon: geo.lon,
-              arrondissement: geo.arrondissement,
-              section: geo.section,
-            },
-            section: sectionStats,
-            arrondissement: arrStats,
-            ecart_pct: ecartPct,
-          } satisfies DvfAddressResult,
+          structuredContent: addressResult satisfies DvfAddressResult,
         };
       } catch (error) {
         return {

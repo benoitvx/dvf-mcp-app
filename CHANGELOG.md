@@ -4,15 +4,44 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ## [Unreleased]
 
-### Planned - v0.6
-- Carte avec sections cadastrales colorées (choropleth selon prix médian)
-- Clic sur section → affiche stats dans panneau info
-- Légende échelle de prix (8K → 25K €/m²)
-- GeoJSON sections via cadastre.data.gouv.fr
-- Jointure géométries + stats DVF
-
 ### Planned - v0.4 (reste)
 - Loading state dans l'UI (skeleton screen)
+
+---
+
+## [0.6.0] - 2026-01-30
+
+### Added
+- Carte choropleth des sections cadastrales colorées selon le prix médian (vert → jaune → rouge)
+- Module `src/api/cadastre.ts` : client API cadastre.data.gouv.fr pour les géométries de sections
+- Fonction `fetchAllSectionStats()` dans `src/api/data-gouv.ts` : récupère les stats DVF de toutes les sections d'un arrondissement
+- Helper `fetchSectionsDataForArr()` dans `server.ts` : charge GeoJSON + stats en parallèle
+- Layer Leaflet `L.geoJSON` interactif : hover highlight, clic → panneau info, tooltip avec prix
+- Panneau info section cliquée : stats section vs arrondissement + écart %
+- Légende de la carte (8K → 25K €/m²) en overlay bas-droite
+- Animation slide-up à l'ouverture du panneau info section
+- Cache mémoire 30min pour les géométries cadastrales (stables dans le temps)
+- Cache mémoire 5min pour les stats de toutes les sections d'un arrondissement
+
+### Fixed
+- Zoom carte adapté : `fitBounds` sur le layer sections au lieu du zoom global Paris
+
+### Changed
+- `get-dvf-stats` enrichi avec `sections` (GeoJSON + stats) dans `structuredContent`
+- `search-dvf-address` enrichi avec `sections` dans `structuredContent`
+- `compare-dvf-stats` inchangé (pas de sections en mode comparaison)
+- `ontoolresult` détecte et charge les sections data, appelle `renderSectionsLayer()`
+- `setType()` (toggle Apparts/Maisons) re-render les couleurs du choropleth et le panneau info
+- `renderSingle()` et `renderAddress()` gèrent le re-render sections au toggle
+- `renderCompare()` nettoie les sections (pas de choropleth en mode compare)
+- Div `.map-container` wrappée dans `.map-wrapper` (position relative pour la légende)
+- Version serveur et app bumped `0.5.0` → `0.6.0`
+
+### Technical
+- Sections GeoJSON fetchées côté serveur (pas de CSP nécessaire côté UI)
+- Approche Option 2 du backlog : chargement par arrondissement (pas tout Paris)
+- Dégradation gracieuse si cadastre API ou stats sections échouent → widget sans sections
+- `SectionStatsEntry` interface légère (sans coords) pour le payload sections
 
 ---
 

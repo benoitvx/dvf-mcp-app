@@ -241,7 +241,7 @@ GET https://data.geopf.fr/geocodage/reverse?lon=2.3065&lat=48.8503&index=parcel
 
 ---
 
-## v0.6 — Carte interactive avec sections cliquables 🗺️
+## v0.6 — Carte interactive avec sections cliquables ✅
 
 **Objectif** : L'utilisateur navigue sur la carte et clique sur les sections pour voir les stats
 
@@ -292,15 +292,15 @@ await mcpDataGouv.queryResourceData({
 ### Tasks
 
 **Serveur MCP** :
-- [ ] Nouveau helper `fetchSectionsGeoJSON(arrondissement: number)` 
+- [x] Nouveau helper `fetchSectionsGeoJSON(arrondissement: number)`
   - Appelle cadastre.data.gouv.fr
   - Retourne le GeoJSON des sections
-  
-- [ ] Nouveau helper `fetchAllSectionStats(arrondissement: number)`
-  - Appelle MCP data.gouv avec `filter_column: "code_parent"`
-  - Retourne un Map<sectionCode, DvfStats>
 
-- [ ] Enrichir `structuredContent` dans les tools existants
+- [x] Nouveau helper `fetchAllSectionStats(arrondissement: number)`
+  - Appelle MCP data.gouv avec `filter_column: "code_parent"`
+  - Retourne un Record<sectionCode, SectionStatsEntry>
+
+- [x] Enrichir `structuredContent` dans les tools existants
   ```typescript
   structuredContent: {
     ...existingData,
@@ -312,42 +312,30 @@ await mcpDataGouv.queryResourceData({
   ```
 
 **UI (mcp-app.ts)** :
-- [ ] Fonction `renderSectionsLayer(geojson, statsMap)`
+- [x] Fonction `renderSectionsLayer(geojson, statsMap)`
   - Créer un `L.geoJSON` layer avec style dynamique
   - `fillColor` selon prix médian (échelle vert → rouge)
-  - `fillOpacity: 0.6` pour voir la carte en dessous
+  - `fillOpacity: 0.55` pour voir la carte en dessous
 
-- [ ] Échelle de couleurs pour le choropleth
+- [x] Échelle de couleurs pour le choropleth
   ```typescript
-  function getPriceColor(prixMedian: number): string {
+  function getPriceColor(prix: number): string {
     // Paris : 8000 (bas) → 25000 (haut)
-    const normalized = (prixMedian - 8000) / (25000 - 8000);
     // Interpolation vert → jaune → rouge
-    return interpolateColor(normalized);
   }
   ```
 
-- [ ] Event listener clic sur section
-  ```typescript
-  sectionsLayer.on('click', (e) => {
-    const sectionCode = e.layer.feature.properties.id;
-    const stats = sectionStatsMap[sectionCode];
-    updateInfoPanel(stats);
-    highlightSection(sectionCode);
-  });
-  ```
+- [x] Event listener clic sur section
+  - Clic → `updateSectionInfo()` + re-render highlight
+  - Mouseover → highlight border
+  - Tooltip avec nom + prix
 
-- [ ] Panneau info en bas du widget
+- [x] Panneau info en bas du widget
   - Affiche les stats de la section cliquée
   - Comparaison avec l'arrondissement
   - Animation slide-up à l'apparition
 
-- [ ] Légende de la carte
-  ```
-  Prix médian €/m²
-  [████████████████████]
-  8K        15K       25K
-  ```
+- [x] Légende de la carte (8K → 25K €/m²)
 
 **Lazy loading (optionnel mais recommandé)** :
 - [ ] Écouter `map.on('moveend')` 
@@ -381,12 +369,15 @@ L'iframe ne peut pas faire de nouveaux appels au serveur MCP après le render in
 
 ### Tests
 
+- [x] Build OK, pas d'erreur TypeScript
 - [ ] Charger Paris 7e → sections colorées visibles
-- [ ] Cliquer section AK → panneau affiche "18 681 €/m²"
+- [ ] Cliquer section AK → panneau affiche stats + écart %
 - [ ] Vérifier échelle de couleurs cohérente (Invalides plus rouge que périphérie)
 - [ ] Toggle Apparts/Maisons → couleurs se mettent à jour
 - [ ] Légende visible et lisible
 - [ ] Dark mode : couleurs toujours visibles
+- [ ] Mode address : section de l'adresse avec contour bleu épais
+- [ ] Mode compare : pas de sections (inchangé)
 
 ---
 
@@ -430,7 +421,7 @@ v0.4 ✅ (données temps réel) ──┐
                               ├──▶ v0.5 ✅ (recherche adresse)
 v0.3 ✅ ──────────────────────┘              │
                                              ▼
-                                v0.6 (sections cliquables) ──▶ v1.0
+                                v0.6 ✅ (sections cliquables) ──▶ v1.0
 ```
 
 **MVP v1.0** = v0.4 + v0.5 + v0.6
@@ -439,6 +430,6 @@ v0.3 ✅ ──────────────────────┘  
 |---------|-----------|--------|--------|
 | v0.4 | ⭐⭐⭐ | Moyen | ✅ Done |
 | v0.5 | ⭐⭐⭐⭐⭐ | Moyen | ✅ Done |
-| v0.6 | ⭐⭐⭐⭐ | Moyen-Élevé | Prêt à implémenter |
+| v0.6 | ⭐⭐⭐⭐ | Moyen-Élevé | ✅ Done |
 | v0.7 | ⭐⭐ | Faible | Optionnel |
 | v0.8 | ⭐⭐⭐ | Élevé | Optionnel |
