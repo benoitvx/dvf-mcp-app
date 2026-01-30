@@ -11,18 +11,40 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 - GeoJSON sections via cadastre.data.gouv.fr
 - Jointure géométries + stats DVF
 
-### Planned - v0.5
-- Tool `search-dvf-address` : recherche par adresse parisienne
-- Géocodage via API Géoplateforme (remplace api-adresse.data.gouv.fr dépréciée)
-- Stats par section cadastrale (granularité ~500m vs arrondissement)
-- Comparaison section vs arrondissement avec écart en %
-- UI mode "address" : marker + section highlight + stats comparatives
+### Planned - v0.4 (reste)
+- Loading state dans l'UI (skeleton screen)
 
-### Planned - v0.4
-- ~~Données temps réel via MCP data.gouv (remplace JSON statique)~~ ✅
-- ~~Client API `src/api/data-gouv.ts`~~ ✅
-- ~~Fallback vers JSON si API indisponible~~ ✅
-- Loading state dans l'UI
+---
+
+## [0.5.0] - 2026-01-30
+
+### Added
+- Tool `search-dvf-address` : recherche par adresse parisienne
+- Module `src/api/geoplateforme.ts` : client géocodage API Géoplateforme (forward + reverse)
+- Géocodage en 2 étapes : adresse → coordonnées → section cadastrale
+- Stats par section cadastrale comparées à l'arrondissement
+- Calcul écart % (section vs arrondissement) sur prix médian
+- UI mode "address" : 2 colonnes comparatives (section vs arrondissement)
+- Marker CSS (`L.divIcon`) sur la carte — pas d'image externe, pas de CSP
+- Carte zoomée niveau rue (zoom 15) centrée sur l'adresse
+- Widget 450px en mode address (entre single 380px et compare 520px)
+- Recalcul écart % côté client au toggle Apparts/Maisons
+- Dégradation gracieuse : reverse geocoding ou section DVF manquants → stats arrondissement uniquement
+- Validation Paris uniquement (`citycode.startsWith("751")`)
+
+### Changed
+- `render()` dispatch vers `renderSingle()` / `renderCompare()` / `renderAddress()` selon le mode
+- `ontoolresult` détecte le mode address via `isAddressData()` type guard
+- `ontoolinput` affiche "Recherche : {adresse}..." pendant le chargement
+- `renderSingle()` et `renderCompare()` nettoient le marker et la classe `.address-mode`
+- Version serveur et app bumped `0.4.0` → `0.5.0`
+
+### Tested
+- Build OK, pas d'erreur TypeScript
+- Validé sur Claude Desktop : "prix 45 avenue de la Motte-Picquet Paris 7"
+  - Géocodé dans le 15e (n°45 côté 15e, l'avenue traverse 7e/15e)
+  - Section DE : 11 295 €/m², +10% vs Paris 15e (10 222 €/m²)
+  - Marker positionné, carte zoomée, dark mode OK
 
 ---
 
@@ -38,6 +60,12 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 - `get-dvf-stats` et `compare-dvf-stats` appellent l'API au lieu du JSON
 - `compare-dvf-stats` utilise `Promise.all` (appels parallèles)
 - Type `DvfEntry` déplacé dans `src/api/data-gouv.ts`
+
+### Tested
+- Build OK, pas d'erreur TypeScript
+- Validé sur claude.ai : `get-dvf-stats` Paris 11e → données API (prix médian maisons 11 600 vs 11 300 dans le JSON statique)
+- Validé sur claude.ai : `compare-dvf-stats` Paris 6e vs 20e → bar chart avec données API
+- Carte, toggle Apparts/Maisons, bar chart fonctionnels
 
 ---
 

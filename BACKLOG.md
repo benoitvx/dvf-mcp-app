@@ -113,7 +113,7 @@
 
 ---
 
-## v0.5 — Recherche par adresse 📍
+## v0.5 — Recherche par adresse ✅
 
 **Objectif** : L'utilisateur saisit une adresse → stats DVF de la zone (section cadastrale)
 
@@ -164,7 +164,7 @@ GET https://data.geopf.fr/geocodage/reverse?lon=2.3065&lat=48.8503&index=parcel
 
 ### Tasks
 
-- [ ] Créer `src/api/geoplateforme.ts` — client géocodage
+- [x] Créer `src/api/geoplateforme.ts` — client géocodage
   ```typescript
   interface GeoResult {
     label: string;           // "45 Avenue de la Motte-Picquet 75007 Paris"
@@ -174,18 +174,18 @@ GET https://data.geopf.fr/geocodage/reverse?lon=2.3065&lat=48.8503&index=parcel
     arrondissement: number;  // 7
     section: string | null;  // "75107000AK"
   }
-  
+
   async function geocodeAddress(adresse: string): Promise<GeoResult>
   ```
 
-- [ ] Nouveau tool `search-dvf-address` dans `server.ts`
+- [x] Nouveau tool `search-dvf-address` dans `server.ts`
   - Input : `adresse` (string)
   - Appeler `geocodeAddress(adresse)`
   - Appeler `fetchDvfStatsBySection(section)` si section trouvée
   - Appeler `fetchDvfStats(arrondissement)` pour comparaison
   - Retourner `structuredContent` avec mode "address"
 
-- [ ] Format de sortie structuredContent
+- [x] Format de sortie structuredContent
   ```typescript
   {
     mode: "address",
@@ -212,39 +212,32 @@ GET https://data.geopf.fr/geocodage/reverse?lon=2.3065&lat=48.8503&index=parcel
   }
   ```
 
-- [ ] UI mode "address" dans `mcp-app.ts`
+- [x] UI mode "address" dans `mcp-app.ts`
   - Nouveau renderer `renderAddress(data)`
-  - Carte centrée sur l'adresse avec marker (Leaflet marker)
-  - Section en surbrillance (si géométrie dispo)
-  - Affichage comparatif :
-    ```
-    📍 45 Avenue de la Motte-Picquet
-    
-    VOTRE ZONE (section AK)     VS    7E ARRONDISSEMENT
-    ─────────────────────────────────────────────────────
-    18 681 €/m²                       14 400 €/m²
-                    (+28% ↑)
-    
-    54 ventes dans cette zone
-    ```
+  - Carte centrée sur l'adresse avec marker (Leaflet `L.divIcon` CSS, pas d'image externe)
+  - Arrondissement en surbrillance
+  - Affichage comparatif : 2 colonnes (section vs arrondissement) + écart %
+  - Toggle Apparts/Maisons recalcule l'écart côté client
 
-- [ ] Gestion des cas limites
-  - Adresse hors Paris → message d'erreur
-  - Section sans données DVF → afficher seulement les stats arrondissement
-  - Géocodage échoué → message "Adresse non trouvée"
+- [x] Gestion des cas limites
+  - Adresse hors Paris → erreur "Adresse hors Paris"
+  - Section sans données DVF → `section = null`, affiche stats arrondissement uniquement
+  - Géocodage échoué → erreur "Adresse non trouvée"
+  - Reverse geocoding échoué → `section = null`, dégradation gracieuse
 
-- [ ] Widget sizing
-  - Mode address : 450px de hauteur
-  - Transition smooth depuis les autres modes
+- [x] Widget sizing
+  - Mode address : max-width 450px (entre single 380px et compare 520px)
+  - Transition CSS smooth
 
 ### Test
 
-- [ ] Prompt "prix immobilier 45 avenue de la Motte-Picquet Paris 7"
+- [x] Prompt "prix immobilier 45 avenue de la Motte-Picquet Paris 7"
+  - Résultat : géocodé dans le 15e (n°45 côté 15e), section DE, +10% vs arr.
 - [ ] Prompt "prix rue de la Roquette Paris 11" (sans numéro)
 - [ ] Prompt "prix 1 place de la Concorde Paris" (section très chère)
 - [ ] Prompt "prix 12 rue de Belleville Paris 20" (section moins chère)
-- [ ] Vérifier marker sur la carte
-- [ ] Vérifier calcul écart % correct
+- [x] Vérifier marker sur la carte
+- [x] Vérifier calcul écart % correct
 
 ---
 
@@ -433,11 +426,11 @@ L'iframe ne peut pas faire de nouveaux appels au serveur MCP après le render in
 ## Priorisation
 
 ```
-v0.4 (données temps réel) ──┐
-                            ├──▶ v0.5 (recherche adresse)
-v0.3 ✅ ────────────────────┘              │
-                                           ▼
-                              v0.6 (sections cliquables) ──▶ v1.0
+v0.4 ✅ (données temps réel) ──┐
+                              ├──▶ v0.5 ✅ (recherche adresse)
+v0.3 ✅ ──────────────────────┘              │
+                                             ▼
+                                v0.6 (sections cliquables) ──▶ v1.0
 ```
 
 **MVP v1.0** = v0.4 + v0.5 + v0.6
@@ -445,7 +438,7 @@ v0.3 ✅ ────────────────────┘        
 | Version | Impact UX | Effort | Status |
 |---------|-----------|--------|--------|
 | v0.4 | ⭐⭐⭐ | Moyen | ✅ Done |
-| v0.5 | ⭐⭐⭐⭐⭐ | Moyen | Prêt à implémenter |
+| v0.5 | ⭐⭐⭐⭐⭐ | Moyen | ✅ Done |
 | v0.6 | ⭐⭐⭐⭐ | Moyen-Élevé | Prêt à implémenter |
 | v0.7 | ⭐⭐ | Faible | Optionnel |
 | v0.8 | ⭐⭐⭐ | Élevé | Optionnel |

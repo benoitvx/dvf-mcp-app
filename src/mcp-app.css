@@ -137,6 +137,106 @@ html, body {
   border-color: var(--color-text-primary, #1a1a1a);
 }
 
+.main.address-mode {
+  max-width: 450px;
+}
+
+.address-section {
+  padding: 16px 20px 12px;
+  border-top: 1px solid var(--color-border-secondary, #eee);
+  border-bottom: 1px solid var(--color-border-secondary, #eee);
+}
+
+.address-label {
+  font-size: var(--font-text-sm-size, 0.8125rem);
+  color: var(--color-text-secondary, #666);
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.address-comparison {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.address-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  background: var(--color-background-secondary, #f5f5f5);
+  border-radius: var(--border-radius-md, 8px);
+}
+
+.address-col-title {
+  font-size: var(--font-text-xs-size, 0.75rem);
+  color: var(--color-text-tertiary, #999);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.address-col-value {
+  font-size: var(--font-text-lg-size, 1.0625rem);
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--color-text-primary, #1a1a1a);
+  font-variant-numeric: tabular-nums;
+}
+
+.address-col-detail {
+  font-size: var(--font-text-xs-size, 0.75rem);
+  color: var(--color-text-tertiary, #999);
+}
+
+.address-ecart {
+  font-size: var(--font-text-md-size, 0.9375rem);
+  font-weight: var(--font-weight-semibold, 600);
+  white-space: nowrap;
+}
+
+.address-ecart.positive {
+  color: #dc2626;
+}
+
+.address-ecart.negative {
+  color: #16a34a;
+}
+
+.address-ecart.neutral {
+  color: var(--color-text-tertiary, #999);
+}
+
+.dvf-marker {
+  position: relative;
+  width: 24px;
+  height: 34px;
+}
+
+.dvf-marker-pin {
+  width: 24px;
+  height: 24px;
+  border-radius: 50% 50% 50% 0;
+  background: #dc2626;
+  position: absolute;
+  transform: rotate(-45deg);
+  left: 0;
+  top: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.dvf-marker-pin::after {
+  content: "";
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  position: absolute;
+  border-radius: 50%;
+  top: 7px;
+  left: 7px;
+}
+
 .compare-section {
   padding: 12px 20px 0;
 }

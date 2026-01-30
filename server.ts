@@ -12,7 +12,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
 
-import { fetchDvfStats, type DvfEntry } from "./src/api/data-gouv.js";
+import { fetchDvfStats, fetchDvfStatsBySection, type DvfEntry } from "./src/api/data-gouv.js";
+import { geocodeAddress } from "./src/api/geoplateforme.js";
 import dvfData from "./src/data/dvf-paris.json" with { type: "json" };
 
 const DIST_DIR = import.meta.filename.endsWith(".ts")
@@ -23,6 +24,20 @@ type DvfCompareResult = {
   mode: "compare";
   arrondissement_1: DvfEntry;
   arrondissement_2: DvfEntry;
+};
+
+type DvfAddressResult = {
+  mode: "address";
+  address: {
+    label: string;
+    lat: number;
+    lon: number;
+    arrondissement: number;
+    section: string | null;
+  };
+  section: DvfEntry | null;
+  arrondissement: DvfEntry;
+  ecart_pct: number | null;
 };
 
 const fallbackData = dvfData as Record<string, DvfEntry>;
@@ -44,7 +59,7 @@ async function getDvfStats(arrondissement: number): Promise<DvfEntry> {
 export function createServer(): McpServer {
   const server = new McpServer({
     name: "DVF Paris",
-    version: "0.4.0",
+    version: "0.5.0",
   });
 
   const resourceUri = "ui://dvf/mcp-app.html";
@@ -146,6 +161,96 @@ export function createServer(): McpServer {
             {
               type: "text",
               text: `Erreur : ${error instanceof Error ? error.message : "Impossible de récupérer les données."}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  registerAppTool(
+    server,
+    "search-dvf-address",
+    {
+      title: "Prix immobilier par adresse",
+      description:
+        "Recherche les stats DVF pour une adresse parisienne. Retourne les stats de la section cadastrale + comparaison avec l'arrondissement.",
+      inputSchema: {
+        adresse: z
+          .string()
+          .describe(
+            "Adresse à Paris (ex: '45 avenue de la Motte-Picquet Paris 7')",
+          ),
+      },
+      _meta: { ui: { resourceUri } },
+    },
+    async ({ adresse }): Promise<CallToolResult> => {
+      try {
+        const geo = await geocodeAddress(adresse);
+
+        const arrStats = await getDvfStats(geo.arrondissement);
+
+        let sectionStats: DvfEntry | null = null;
+        if (geo.section) {
+          try {
+            sectionStats = await fetchDvfStatsBySection(geo.section);
+          } catch {
+            // Section sans données DVF → dégradation gracieuse
+            sectionStats = null;
+          }
+        }
+
+        let ecartPct: number | null = null;
+        if (
+          sectionStats &&
+          sectionStats.appartements.prix_median > 0 &&
+          arrStats.appartements.prix_median > 0
+        ) {
+          ecartPct = Math.round(
+            ((sectionStats.appartements.prix_median -
+              arrStats.appartements.prix_median) /
+              arrStats.appartements.prix_median) *
+              100,
+          );
+        }
+
+        const prixLabel = sectionStats
+          ? `${sectionStats.appartements.prix_median.toLocaleString("fr-FR")} €/m²`
+          : `${arrStats.appartements.prix_median.toLocaleString("fr-FR")} €/m²`;
+
+        const ecartLabel =
+          ecartPct != null
+            ? ` (${ecartPct > 0 ? "+" : ""}${ecartPct} % vs ${geo.arrondissement}e)`
+            : "";
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: `${geo.label} — ${prixLabel}${ecartLabel}`,
+            },
+          ],
+          structuredContent: {
+            mode: "address",
+            address: {
+              label: geo.label,
+              lat: geo.lat,
+              lon: geo.lon,
+              arrondissement: geo.arrondissement,
+              section: geo.section,
+            },
+            section: sectionStats,
+            arrondissement: arrStats,
+            ecart_pct: ecartPct,
+          } satisfies DvfAddressResult,
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Erreur : ${error instanceof Error ? error.message : "Impossible de géocoder l'adresse."}`,
             },
           ],
           isError: true,

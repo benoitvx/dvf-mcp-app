@@ -12,6 +12,7 @@ Ask Claude about Paris real estate prices and get an interactive widget with:
 - **Price stats**: average price/m², median price/m², number of sales
 - **Apartments / Houses toggle**
 - **Comparison mode**: compare two arrondissements side-by-side with a bar chart
+- **Address search** (v0.5): search by address and get stats for the cadastral section
 
 Data source: [DVF (Demandes de Valeurs Foncieres)](https://www.data.gouv.fr/fr/datasets/demandes-de-valeurs-foncieres-geolocalisees/) from data.gouv.fr.
 
@@ -27,9 +28,13 @@ Claude                    MCP Server               UI (iframe)
   │── "compare 6e vs 11e" ──>│                         │
   │                          │── compare-dvf-stats ───>│
   │                          │   mode: "compare"       │── Map + Bar chart
+  │                          │                         │
+  │── "prix rue Roquette" ──>│                         │
+  │                          │── search-dvf-address ──>│
+  │                          │   mode: "address"       │── Map + Marker + Compare
 ```
 
-1. Claude calls `get-dvf-stats` or `compare-dvf-stats`
+1. Claude calls `get-dvf-stats`, `compare-dvf-stats` or `search-dvf-address`
 2. The tool returns data + a reference to `ui://dvf/mcp-app.html`
 3. Claude fetches the resource and displays it in a sandboxed iframe
 4. The UI receives data via `app.ontoolresult`
@@ -40,6 +45,7 @@ Claude                    MCP Server               UI (iframe)
 |------|-------|--------|
 | `get-dvf-stats` | `arrondissement` (1-20) | Price stats for one arrondissement |
 | `compare-dvf-stats` | `arrondissement_1`, `arrondissement_2` (1-20) | Side-by-side comparison with bar chart |
+| `search-dvf-address` | `adresse` (string) | Stats for cadastral section + comparison with arrondissement |
 
 ## Stack
 
@@ -52,6 +58,14 @@ Claude                    MCP Server               UI (iframe)
 | Map | Leaflet + OpenStreetMap (no API key needed) |
 | Charts | Pure SVG (no dependencies) |
 | Transport | stdio (Claude Desktop) or Streamable HTTP |
+
+## External APIs
+
+| API | Usage |
+|-----|-------|
+| [MCP data.gouv](https://www.data.gouv.fr/datasets/statistiques-dvf/) | Real-time DVF stats |
+| [API Géoplateforme](https://geoservices.ign.fr/documentation/services/services-geoplateforme/geocodage) | Address geocoding |
+| [cadastre.data.gouv.fr](https://cadastre.data.gouv.fr/) | Cadastral parcels (planned) |
 
 ## Setup
 
@@ -100,13 +114,27 @@ dvf-mcp-app/
 ├── src/
 │   ├── mcp-app.ts         # UI logic (map, chart, host communication)
 │   ├── mcp-app.css        # Widget styles
+│   ├── api/               # External API clients
+│   │   ├── data-gouv.ts   # MCP data.gouv client
+│   │   └── geoplateforme.ts # Geocoding client
 │   └── data/
-│       ├── dvf-paris.json          # Pre-computed stats per arrondissement
+│       ├── dvf-paris.json          # Pre-computed stats (fallback)
 │       └── arrondissements.geojson.json  # GeoJSON boundaries
 ├── package.json
 ├── tsconfig.json
 └── vite.config.ts
 ```
+
+## Roadmap
+
+- [x] **v0.1** — Basic stats widget
+- [x] **v0.2** — Interactive map with Leaflet
+- [x] **v0.3** — Comparison mode (2 arrondissements)
+- [x] **v0.4** — Real-time data via data.gouv.fr API (with JSON fallback)
+- [ ] **v0.5** — Address search with cadastral section stats
+- [ ] **v0.6** — Cadastral parcels overlay (optional)
+- [ ] **v0.7** — Link to recent transactions (optional)
+- [ ] **v0.8** — Full-screen mode (optional)
 
 ## License
 

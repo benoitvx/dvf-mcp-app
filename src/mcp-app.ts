@@ -25,10 +25,28 @@ interface DvfCompareData {
   arrondissement_2: DvfStats;
 }
 
-type ToolResultData = DvfStats | DvfCompareData;
+interface DvfAddressData {
+  mode: "address";
+  address: {
+    label: string;
+    lat: number;
+    lon: number;
+    arrondissement: number;
+    section: string | null;
+  };
+  section: DvfStats | null;
+  arrondissement: DvfStats;
+  ecart_pct: number | null;
+}
+
+type ToolResultData = DvfStats | DvfCompareData | DvfAddressData;
 
 function isCompareData(d: ToolResultData): d is DvfCompareData {
   return (d as DvfCompareData).mode === "compare";
+}
+
+function isAddressData(d: ToolResultData): d is DvfAddressData {
+  return (d as DvfAddressData).mode === "address";
 }
 
 const mainEl = document.querySelector(".main") as HTMLElement;
@@ -42,15 +60,27 @@ const btnAppart = document.getElementById("btn-appart")!;
 const btnMaison = document.getElementById("btn-maison")!;
 const compareSectionEl = document.getElementById("compare-section")!;
 const chartContainerEl = document.getElementById("chart-container")!;
+const addressSectionEl = document.getElementById("address-section")!;
+const addressLabelEl = document.getElementById("address-label")!;
+const addrSectionTitleEl = document.getElementById("addr-section-title")!;
+const addrSectionValueEl = document.getElementById("addr-section-value")!;
+const addrSectionVentesEl = document.getElementById("addr-section-ventes")!;
+const addrArrTitleEl = document.getElementById("addr-arr-title")!;
+const addrArrValueEl = document.getElementById("addr-arr-value")!;
+const addrArrVentesEl = document.getElementById("addr-arr-ventes")!;
+const addressEcartEl = document.getElementById("address-ecart")!;
 
 let currentStats: DvfStats | null = null;
 let compareData: DvfCompareData | null = null;
+let addressData: DvfAddressData | null = null;
 let isCompareMode = false;
+let isAddressMode = false;
 let currentType: "appartements" | "maisons" = "appartements";
 
 let map: L.Map | null = null;
 let highlightLayer: L.GeoJSON | null = null;
 let highlightLayer2: L.GeoJSON | null = null;
+let markerLayer: L.Marker | null = null;
 
 function initMap() {
   const mapEl = document.getElementById("map");
@@ -130,6 +160,33 @@ function highlightArrondissements(num1: number, num2?: number) {
   if (group.getLayers().length > 0) {
     map.fitBounds(group.getBounds(), { padding: [30, 30], maxZoom: 14 });
   }
+}
+
+function clearMarker() {
+  if (markerLayer && map) {
+    map.removeLayer(markerLayer);
+    markerLayer = null;
+  }
+}
+
+function addMarker(lat: number, lon: number, label: string) {
+  if (!map) return;
+  clearMarker();
+
+  const icon = L.divIcon({
+    className: "",
+    html: '<div class="dvf-marker"><div class="dvf-marker-pin"></div></div>',
+    iconSize: [24, 34],
+    iconAnchor: [12, 34],
+    tooltipAnchor: [0, -34],
+  });
+
+  markerLayer = L.marker([lat, lon], { icon }).addTo(map);
+  markerLayer.bindTooltip(label, {
+    permanent: false,
+    direction: "top",
+    offset: [0, -2],
+  });
 }
 
 function fmt(n: number): string {
@@ -220,7 +277,10 @@ function renderSingle() {
 
   statsEl.style.display = "";
   compareSectionEl.style.display = "none";
+  addressSectionEl.style.display = "none";
   mainEl.classList.remove("compare-mode");
+  mainEl.classList.remove("address-mode");
+  clearMarker();
 }
 
 function renderCompare() {
@@ -231,10 +291,13 @@ function renderCompare() {
   titleEl.textContent = `${a1.nom} vs ${a2.nom}`;
   badgeEl.textContent = currentType === "appartements" ? "Appartements" : "Maisons";
 
-  // Hide the single-stats row, show chart
+  // Hide the single-stats row and address section, show chart
   statsEl.style.display = "none";
   compareSectionEl.style.display = "";
+  addressSectionEl.style.display = "none";
   mainEl.classList.add("compare-mode");
+  mainEl.classList.remove("address-mode");
+  clearMarker();
 
   const d1 = a1[currentType];
   const d2 = a2[currentType];
@@ -248,8 +311,79 @@ function renderCompare() {
   renderBarChart(chartContainerEl, metrics, a1.nom, a2.nom);
 }
 
+function renderAddress() {
+  if (!addressData) return;
+
+  const arr = addressData.arrondissement;
+  const sec = addressData.section;
+  const addr = addressData.address;
+
+  titleEl.textContent = addr.label;
+  badgeEl.textContent = currentType === "appartements" ? "Appartements" : "Maisons";
+
+  statsEl.style.display = "none";
+  compareSectionEl.style.display = "none";
+  addressSectionEl.style.display = "";
+  mainEl.classList.remove("compare-mode");
+  mainEl.classList.add("address-mode");
+
+  const typeData = currentType;
+
+  if (sec) {
+    const secD = sec[typeData];
+    const arrD = arr[typeData];
+
+    addrSectionTitleEl.textContent = addr.section
+      ? `Section ${addr.section.slice(-2)}`
+      : "Votre zone";
+    addrSectionValueEl.textContent = `${fmt(secD.prix_median)} \u20AC/m\u00B2`;
+    addrSectionVentesEl.textContent = `${fmt(secD.nb_ventes)} ventes`;
+
+    addrArrTitleEl.textContent = `${arr.nom}`;
+    addrArrValueEl.textContent = `${fmt(arrD.prix_median)} \u20AC/m\u00B2`;
+    addrArrVentesEl.textContent = `${fmt(arrD.nb_ventes)} ventes`;
+
+    // Calcul écart % côté client pour le type courant
+    let ecart: number | null = null;
+    if (secD.prix_median > 0 && arrD.prix_median > 0) {
+      ecart = Math.round(
+        ((secD.prix_median - arrD.prix_median) / arrD.prix_median) * 100,
+      );
+    }
+
+    if (ecart != null) {
+      const sign = ecart > 0 ? "+" : "";
+      addressEcartEl.textContent = `${sign}${ecart} %`;
+      addressEcartEl.className = `address-ecart ${ecart > 0 ? "positive" : ecart < 0 ? "negative" : "neutral"}`;
+    } else {
+      addressEcartEl.textContent = "—";
+      addressEcartEl.className = "address-ecart neutral";
+    }
+
+    addressLabelEl.textContent = `Prix médian ${typeData === "appartements" ? "appartements" : "maisons"}`;
+  } else {
+    // Pas de section → afficher uniquement les stats arrondissement
+    const arrD = arr[typeData];
+
+    addrSectionTitleEl.textContent = "Votre zone";
+    addrSectionValueEl.textContent = "N/A";
+    addrSectionVentesEl.textContent = "Données indisponibles";
+
+    addrArrTitleEl.textContent = `${arr.nom}`;
+    addrArrValueEl.textContent = `${fmt(arrD.prix_median)} \u20AC/m\u00B2`;
+    addrArrVentesEl.textContent = `${fmt(arrD.nb_ventes)} ventes`;
+
+    addressEcartEl.textContent = "—";
+    addressEcartEl.className = "address-ecart neutral";
+
+    addressLabelEl.textContent = `Prix médian ${typeData === "appartements" ? "appartements" : "maisons"} (section non disponible)`;
+  }
+}
+
 function render() {
-  if (isCompareMode) {
+  if (isAddressMode) {
+    renderAddress();
+  } else if (isCompareMode) {
     renderCompare();
   } else {
     renderSingle();
@@ -278,15 +412,17 @@ function handleHostContext(ctx: McpUiHostContext) {
   }
 }
 
-const app = new App({ name: "DVF Paris", version: "0.4.0" });
+const app = new App({ name: "DVF Paris", version: "0.5.0" });
 
 app.onteardown = async () => ({});
 
 app.ontoolinput = (params) => {
   const args = params.arguments as
-    | { arrondissement?: number; arrondissement_1?: number; arrondissement_2?: number }
+    | { arrondissement?: number; arrondissement_1?: number; arrondissement_2?: number; adresse?: string }
     | undefined;
-  if (args?.arrondissement_1 && args?.arrondissement_2) {
+  if (args?.adresse) {
+    titleEl.textContent = `Recherche : ${args.adresse}...`;
+  } else if (args?.arrondissement_1 && args?.arrondissement_2) {
     titleEl.textContent = `Paris ${args.arrondissement_1}e vs ${args.arrondissement_2}e...`;
   } else if (args?.arrondissement) {
     titleEl.textContent = `Paris ${args.arrondissement}e...`;
@@ -301,10 +437,23 @@ app.ontoolresult = (result: CallToolResult) => {
   btnAppart.classList.add("active");
   btnMaison.classList.remove("active");
 
-  if (isCompareData(payload)) {
+  if (isAddressData(payload)) {
+    isAddressMode = true;
+    isCompareMode = false;
+    addressData = payload;
+    compareData = null;
+    currentStats = null;
+    render();
+    initMap();
+    highlightArrondissements(payload.address.arrondissement);
+    addMarker(payload.address.lat, payload.address.lon, payload.address.label);
+    map?.setView([payload.address.lat, payload.address.lon], 15);
+  } else if (isCompareData(payload)) {
     isCompareMode = true;
+    isAddressMode = false;
     compareData = payload;
     currentStats = null;
+    addressData = null;
     render();
     initMap();
     highlightArrondissements(
@@ -313,7 +462,9 @@ app.ontoolresult = (result: CallToolResult) => {
     );
   } else {
     isCompareMode = false;
+    isAddressMode = false;
     compareData = null;
+    addressData = null;
     currentStats = payload;
     render();
     initMap();
