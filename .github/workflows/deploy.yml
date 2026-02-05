@@ -1,0 +1,49 @@
+name: Deploy to Scaleway
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  REGISTRY: ${{ secrets.SCW_REGISTRY_URL }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to Scaleway Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: nologin
+          password: ${{ secrets.SCW_SECRET_KEY }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ env.REGISTRY }}/dvf-mcp-app:latest
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    steps:
+      - name: Install Scaleway CLI
+        uses: scaleway/action-scw@v0
+        with:
+          version: latest
+          access-key: ${{ secrets.SCW_ACCESS_KEY }}
+          secret-key: ${{ secrets.SCW_SECRET_KEY }}
+          default-organization-id: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
+          default-project-id: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
+          default-zone: fr-par-1
+
+      - name: Deploy to Serverless Container
+        run: |
+          scw container container update ${{ secrets.SCW_CONTAINER_ID }} image=${{ env.REGISTRY }}/dvf-mcp-app:latest
+          scw container container deploy ${{ secrets.SCW_CONTAINER_ID }}
