@@ -4,7 +4,7 @@ An interactive MCP App that displays Paris real estate prices per arrondissement
 
 Built with the [MCP Apps SDK](https://github.com/modelcontextprotocol/ext-apps) (`@modelcontextprotocol/ext-apps`).
 
-<video src="public/demo-dvf.mp4" controls width="100%"></video>
+![Demo DVF Paris](public/demo-dvf.gif)
 
 ## What it does
 
